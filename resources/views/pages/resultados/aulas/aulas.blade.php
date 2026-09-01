@@ -1,18 +1,5 @@
 
-<div class="relative space-y-6">
-    <div
-        wire:loading.flex
-        wire:target="procesoSeleccionado,examenSeleccionado"
-        class="absolute inset-0 z-20 items-start justify-center bg-white/75 pt-36 backdrop-blur-[1px] dark:bg-zinc-900/75"
-        role="status"
-        aria-live="polite"
-    >
-        <div class="flex items-center gap-3 rounded-lg bg-white px-5 py-3 text-sm font-medium shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
-            <flux:icon.arrow-path class="size-5 animate-spin text-blue-600" />
-            Cargando jornada y distribución…
-        </div>
-    </div>
-
+<div class="space-y-6">
     <x-pagina.encabezado titulo="Examen y aulas" bajada="Define la capacidad y el área de cada aula antes de sortear las ubicaciones.">
         <x-slot:acciones>
             @can(App\Enums\Permiso::ResultadosConfigurarAulas->value)
@@ -39,6 +26,17 @@
                 <flux:select.option :value="$opcion->id_exa">{{ $opcion->nombre_exa }}{{ $opcion->fecha_exa ? ' · '.$opcion->fecha_exa->format('d/m/Y') : '' }}</flux:select.option>
             @endforeach
         </flux:select>
+    </div>
+
+    <div
+        wire:loading.flex
+        wire:target="procesoSeleccionado,examenSeleccionado"
+        class="items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300"
+        role="status"
+        aria-live="polite"
+    >
+        <flux:icon.arrow-path class="size-4 animate-spin text-blue-600" />
+        Cargando jornada y distribución…
     </div>
 
     @if ($examen)
