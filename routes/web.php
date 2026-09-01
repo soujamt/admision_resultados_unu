@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SalirController;
 use App\Http\Controllers\Inscripciones\MostrarFotoController;
+use App\Http\Controllers\Resultados\ExportarPadronAulaController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/inicio');
@@ -34,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/inscripciones/{inscripcion}/foto', MostrarFotoController::class)->name('inscripciones.foto');
 
     Route::livewire('/resultados/aulas', 'pages::resultados.aulas')->name('resultados.aulas');
+    Route::get('/resultados/aulas/{aulaExamen}/padron', ExportarPadronAulaController::class)->name('resultados.aulas.padron');
 
     Route::post('/salir', SalirController::class)->name('auth.salir');
 });

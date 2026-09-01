@@ -71,7 +71,7 @@
                         <flux:table.cell><div class="font-medium">{{ $fila->aula->etiqueta() }}</div><div class="text-xs text-zinc-500">{{ $fila->aula->sede->nombre_sed }}</div></flux:table.cell>
                         <flux:table.cell>{{ $fila->area->etiqueta() }}</flux:table.cell>
                         <flux:table.cell align="center">{{ $fila->capacidad_eau }}</flux:table.cell>
-                        <flux:table.cell align="end">@can(App\Enums\Permiso::ResultadosConfigurarAulas->value)<x-tabla.accion wire:click="retirarAula({{ $fila->id_eau }})" wire:confirm="¿Retirar esta aula de la distribución?" icon="trash" tooltip="Retirar" />@endcan</flux:table.cell>
+                        <flux:table.cell align="end"><div class="flex justify-end gap-1"><a href="{{ route('resultados.aulas.padron', $fila) }}"><flux:button size="sm" variant="subtle" icon="document-arrow-down">PDF</flux:button></a>@can(App\Enums\Permiso::ResultadosConfigurarAulas->value)<x-tabla.accion wire:click="retirarAula({{ $fila->id_eau }})" wire:confirm="¿Retirar esta aula de la distribución?" icon="trash" tooltip="Retirar" />@endcan</div></flux:table.cell>
                     </flux:table.row>
                 @empty
                     <x-tabla.vacia :columnas="4" mensaje="Agrega las aulas que se usarán en esta jornada." icono="building-office-2" />
