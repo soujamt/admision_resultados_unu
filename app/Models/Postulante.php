@@ -189,7 +189,6 @@ class Postulante extends Model
         return $apellidos.', '.$this->nombres_pos;
     }
 
-
     /**
      * @param  Builder<$this>  $consulta
      */

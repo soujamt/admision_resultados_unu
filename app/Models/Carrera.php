@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\EstadoRegistro;
 use App\Models\Concerns\TieneEstado;
 use Database\Factories\CarreraFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -69,5 +68,4 @@ class Carrera extends Model
     {
         return $this->hasMany(Vacante::class, 'id_car', 'id_car');
     }
-
 }

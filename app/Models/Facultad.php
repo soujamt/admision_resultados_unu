@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\EstadoRegistro;
 use App\Models\Concerns\TieneEstado;
 use Database\Factories\FacultadFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -47,5 +46,4 @@ class Facultad extends Model
     {
         return $this->hasMany(Carrera::class, 'id_fac', 'id_fac');
     }
-
 }

@@ -6,7 +6,6 @@ use App\Enums\Convocatoria;
 use App\Enums\EstadoRegistro;
 use App\Models\Concerns\TieneEstado;
 use Database\Factories\ProcesoFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -132,5 +131,4 @@ class Proceso extends Model
     {
         return 'procesos/'.$this->codigo_pro;
     }
-
 }

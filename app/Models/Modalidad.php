@@ -6,7 +6,6 @@ use App\Enums\EstadoRegistro;
 use App\Enums\GrupoModalidad;
 use App\Models\Concerns\TieneEstado;
 use Database\Factories\ModalidadFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -50,5 +49,4 @@ class Modalidad extends Model
             'estado_mod' => EstadoRegistro::class,
         ];
     }
-
 }

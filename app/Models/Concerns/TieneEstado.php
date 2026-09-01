@@ -4,6 +4,7 @@ namespace App\Models\Concerns;
 
 use App\Enums\EstadoRegistro;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 /**
@@ -13,7 +14,7 @@ use Illuminate\Support\Str;
  * nomenclatura del proyecto: `id_fac` implica `estado_fac`. Un modelo que se
  * salga de esa convencion solo tiene que sobrescribir `columnaDeEstado()`.
  *
- * @phpstan-require-extends \Illuminate\Database\Eloquent\Model
+ * @phpstan-require-extends Model
  */
 trait TieneEstado
 {

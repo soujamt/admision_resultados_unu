@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\EstadoRegistro;
 use App\Models\Concerns\TieneEstado;
 use Database\Factories\AreaFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -53,5 +52,4 @@ class Area extends Model
     {
         return "Área {$this->numero_are}: {$this->nombre_are}";
     }
-
 }
