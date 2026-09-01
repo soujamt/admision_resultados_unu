@@ -10,7 +10,6 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
-use RuntimeException;
 
 new
 #[Title('Facultades | Admisión UNU')]

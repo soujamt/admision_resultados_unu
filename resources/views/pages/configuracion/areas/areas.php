@@ -7,7 +7,6 @@ use App\Models\Area;
 use App\Services\Admision\AreaService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use RuntimeException;
 
 new
 #[Title('Áreas académicas | Admisión UNU')]

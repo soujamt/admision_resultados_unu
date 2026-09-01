@@ -73,6 +73,19 @@ class AlmacenFotos
     }
 
     /**
+     * Tipo MIME del archivo privado. Nunca se toma de una cabecera enviada por
+     * el navegador, sino del archivo que ya se encuentra en el almacenamiento.
+     */
+    public function tipoMime(Inscripcion $inscripcion): ?string
+    {
+        if (! $this->existe($inscripcion)) {
+            return null;
+        }
+
+        return Storage::disk(self::DISCO)->mimeType($inscripcion->foto_ins) ?: null;
+    }
+
+    /**
      * Recorre las inscripciones del proceso y le asigna a cada una el archivo
      * que lleva su numero de documento por nombre.
      *

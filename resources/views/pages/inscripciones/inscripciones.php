@@ -16,7 +16,6 @@ use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Maatwebsite\Excel\Facades\Excel;
-use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 new
@@ -105,7 +104,7 @@ class extends Component
 
         $this->validate([
             'procesoDestino' => ['required', 'string', 'exists:tbl_proceso,codigo_pro'],
-            'archivo' => ['required', 'file', 'mimes:xlsx,xls', 'max:20480'],
+            'archivo' => ['required', 'file', 'mimes:xlsx', 'max:20480'],
         ], [
             'archivo.mimes' => 'Sube el archivo Excel del formato oficial (.xlsx).',
             'archivo.max' => 'El archivo no puede pesar más de 20 MB.',

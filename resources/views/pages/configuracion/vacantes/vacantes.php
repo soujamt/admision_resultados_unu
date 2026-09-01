@@ -10,7 +10,6 @@ use App\Services\Admision\VacanteService;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use RuntimeException;
 
 new
 #[Title('Cuadro de vacantes | Admisión UNU')]

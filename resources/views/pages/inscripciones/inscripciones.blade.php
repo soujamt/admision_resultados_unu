@@ -227,7 +227,7 @@
 
                 <x-form.upload-dropzone
                     model="archivo"
-                    accept=".xlsx,.xls"
+                    accept=".xlsx"
                     titulo="Click para elegir el archivo del formato"
                     subtitulo="Excel (.xlsx), hasta 20 MB"
                 >

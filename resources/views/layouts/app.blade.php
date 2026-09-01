@@ -45,16 +45,54 @@
             >
                 Inicio
             </flux:sidebar.item>
-        </flux:sidebar.nav>
 
-        {{--
-            Las pantallas de administracion se agregan aqui, cada una detras de
-            su permiso. El patron es siempre el mismo:
-
-            @can(App\Enums\Permiso::UsuariosVer->value)
-                <flux:sidebar.item icon="users" :href="route('usuarios.index')" ... >Usuarios</flux:sidebar.item>
+            @can(App\Enums\Permiso::InscripcionesVer->value)
+                <flux:sidebar.item
+                    icon="clipboard-document-list"
+                    :href="route('inscripciones.index')"
+                    :current="request()->routeIs('inscripciones.*')"
+                    wire:navigate
+                >
+                    Inscripciones
+                </flux:sidebar.item>
             @endcan
-        --}}
+
+            @if (app(App\Services\Auth\AccesoService::class)->puedeAlguno(auth()->user(), [
+                App\Enums\Permiso::ProcesosVer,
+                App\Enums\Permiso::VacantesVer,
+                App\Enums\Permiso::FacultadesVer,
+                App\Enums\Permiso::AreasVer,
+                App\Enums\Permiso::CarrerasVer,
+                App\Enums\Permiso::SedesVer,
+                App\Enums\Permiso::AulasVer,
+            ]))
+                <flux:separator class="my-2" />
+
+                <div class="px-3 pb-1 text-xs font-medium uppercase tracking-wide text-zinc-500">Configuración</div>
+            @endif
+
+            @can(App\Enums\Permiso::ProcesosVer->value)
+                <flux:sidebar.item icon="calendar-days" :href="route('configuracion.procesos')" :current="request()->routeIs('configuracion.procesos')" wire:navigate>Procesos</flux:sidebar.item>
+            @endcan
+            @can(App\Enums\Permiso::VacantesVer->value)
+                <flux:sidebar.item icon="table-cells" :href="route('configuracion.vacantes')" :current="request()->routeIs('configuracion.vacantes')" wire:navigate>Vacantes</flux:sidebar.item>
+            @endcan
+            @can(App\Enums\Permiso::FacultadesVer->value)
+                <flux:sidebar.item icon="building-office-2" :href="route('configuracion.facultades')" :current="request()->routeIs('configuracion.facultades')" wire:navigate>Facultades</flux:sidebar.item>
+            @endcan
+            @can(App\Enums\Permiso::AreasVer->value)
+                <flux:sidebar.item icon="squares-2x2" :href="route('configuracion.areas')" :current="request()->routeIs('configuracion.areas')" wire:navigate>Áreas</flux:sidebar.item>
+            @endcan
+            @can(App\Enums\Permiso::CarrerasVer->value)
+                <flux:sidebar.item icon="academic-cap" :href="route('configuracion.carreras')" :current="request()->routeIs('configuracion.carreras')" wire:navigate>Carreras</flux:sidebar.item>
+            @endcan
+            @can(App\Enums\Permiso::SedesVer->value)
+                <flux:sidebar.item icon="map-pin" :href="route('configuracion.sedes')" :current="request()->routeIs('configuracion.sedes')" wire:navigate>Sedes</flux:sidebar.item>
+            @endcan
+            @can(App\Enums\Permiso::AulasVer->value)
+                <flux:sidebar.item icon="rectangle-group" :href="route('configuracion.aulas')" :current="request()->routeIs('configuracion.aulas')" wire:navigate>Aulas</flux:sidebar.item>
+            @endcan
+        </flux:sidebar.nav>
     </flux:sidebar>
 
     <flux:header

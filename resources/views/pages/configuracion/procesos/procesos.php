@@ -8,7 +8,6 @@ use App\Models\Proceso;
 use App\Services\Admision\ProcesoService;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use RuntimeException;
 
 new
 #[Title('Procesos de admisión | Admisión UNU')]

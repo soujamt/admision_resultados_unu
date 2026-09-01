@@ -6,9 +6,9 @@ use App\Livewire\Forms\SedeForm;
 use App\Models\Sede;
 use App\Models\Ubigeo;
 use App\Services\Admision\SedeService;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use RuntimeException;
 
 new
 #[Title('Sedes y filiales | Admisión UNU')]
@@ -98,9 +98,9 @@ class extends Component
      * Distritos que ofrece el desplegable: los que coinciden con la busqueda,
      * mas el que ya estuviera elegido para que no desaparezca al filtrar.
      *
-     * @return \Illuminate\Support\Collection<int, Ubigeo>
+     * @return Collection<int, Ubigeo>
      */
-    public function ubigeos(): \Illuminate\Support\Collection
+    public function ubigeos(): Collection
     {
         $elegido = blank($this->form->ubigeo)
             ? collect()
