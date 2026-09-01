@@ -57,18 +57,21 @@
         @can(App\Enums\Permiso::ResultadosConfigurarAulas->value)
             <flux:card>
                 <form wire:submit="agregarAula" class="grid items-end gap-4 lg:grid-cols-4">
-                    <flux:select wire:model="formAula.aula" label="Aula" placeholder="Elige un aula">
+                    <flux:select wire:model.live="formAula.aula" label="Aula" placeholder="Elige un aula">
                         @foreach ($aulas as $aula)
                             <flux:select.option :value="$aula->id_aul">{{ $aula->etiqueta() }} · {{ $aula->sede->nombre_sed }} (máx. {{ min(40, $aula->capacidad_aul) }})</flux:select.option>
                         @endforeach
                     </flux:select>
-                    <flux:select wire:model="formAula.area" label="Área" placeholder="Elige un área">
+                    <flux:select wire:model.live="formAula.area" label="Área" placeholder="Elige un área">
                         @foreach ($areas as $area)
                             <flux:select.option :value="$area->id_are">{{ $area->etiqueta() }}</flux:select.option>
                         @endforeach
                     </flux:select>
                     <flux:input wire:model="formAula.capacidad" type="number" min="1" max="40" label="Postulantes" />
-                    <flux:button type="submit" variant="primary" icon="plus">Agregar aula</flux:button>
+                    <flux:button type="submit" variant="primary" icon="plus" wire:loading.attr="disabled" wire:target="agregarAula">
+                        <span wire:loading.remove wire:target="agregarAula">Agregar aula</span>
+                        <span wire:loading wire:target="agregarAula">Agregando…</span>
+                    </flux:button>
                 </form>
                 <flux:error name="formAula.aula" />
             </flux:card>
