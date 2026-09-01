@@ -6,7 +6,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | --- | --- |
 | {app/Models/Vacante.php,app/Models/ProcesoModalidad.php,app/Services/Admision/**} | .ai/rules/admision.md |
 | {app/Services/Admision/AlmacenFotos.php,app/Models/Inscripcion.php,app/Models/Proceso.php} | .ai/rules/models.md |
-| resources/views/pages/**/*.php | .ai/rules/pages.md |
+| resources/views/pages/**/*.php, resources/views/pages/**/*.blade.php | .ai/rules/pages.md |
 | {app/Services/**,app/Enums/Permiso.php,app/Providers/AppServiceProvider.php} | .ai/rules/providers.md |
 | {app/Models/**,database/migrations/**,database/factories/**,database/seeders/**} | .ai/rules/seeders.md |
 | {app/Services/Excel/**,tests/Support/**} | .ai/rules/support.md |

@@ -14,6 +14,8 @@ class DatabaseSeeder extends Seeder
             MaestroGeneralSeeder::class,
             ModalidadSeeder::class,
             EstructuraAcademicaSeeder::class,
+            /* Depende de las sedes que siembra el seeder anterior. */
+            AulasInicialesSeeder::class,
         ]);
     }
 }
