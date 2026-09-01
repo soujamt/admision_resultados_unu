@@ -25,9 +25,9 @@ class AulasInicialesSeeder extends Seeder
     {
         return collect(range(1, 15))->map(function (int $numero): array {
             $pabellon = match (true) {
-                $numero <= 3 => 'PAB I - Piso 1',
-                $numero <= 6 => 'PAB I - Piso 2',
-                $numero <= 9 => 'PAB I - Piso 3',
+                $numero <= 5 => 'PAB I - Piso 1',
+                $numero <= 10 => 'PAB I - Piso 2',
+                $numero <= 15 => 'PAB I - Piso 3',
                 default => 'PAB II - Piso 1',
             };
 
@@ -35,7 +35,7 @@ class AulasInicialesSeeder extends Seeder
                 'codigo_aul' => 'A-'.str_pad((string) $numero, 3, '0', STR_PAD_LEFT),
                 'nombre_aul' => 'Aula '.$numero,
                 'pabellon_aul' => $pabellon,
-                'capacidad_aul' => 40,
+                'capacidad_aul' => 50,
                 'orden_aul' => $numero,
             ];
         })->all();
