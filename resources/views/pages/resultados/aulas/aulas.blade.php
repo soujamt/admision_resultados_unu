@@ -1,5 +1,18 @@
 
-<div class="space-y-6">
+<div class="relative space-y-6">
+    <div
+        wire:loading.flex
+        wire:target="procesoSeleccionado,examenSeleccionado"
+        class="absolute inset-0 z-20 items-start justify-center bg-white/75 pt-36 backdrop-blur-[1px] dark:bg-zinc-900/75"
+        role="status"
+        aria-live="polite"
+    >
+        <div class="flex items-center gap-3 rounded-lg bg-white px-5 py-3 text-sm font-medium shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+            <flux:icon.arrow-path class="size-5 animate-spin text-blue-600" />
+            Cargando jornada y distribución…
+        </div>
+    </div>
+
     <x-pagina.encabezado titulo="Examen y aulas" bajada="Define la capacidad y el área de cada aula antes de sortear las ubicaciones.">
         <x-slot:acciones>
             @can(App\Enums\Permiso::ResultadosConfigurarAulas->value)
