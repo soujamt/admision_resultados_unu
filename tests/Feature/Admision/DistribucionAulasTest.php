@@ -42,6 +42,21 @@ it('guarda una distribucion valida con un area por aula', function () {
     expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(2);
 });
 
+it('impide asignar dos veces una aula a la misma jornada sin reconstruir la distribución', function () {
+    $examen = Examen::factory()->create();
+    $aula = Aula::factory()->create();
+    $servicio = app(DistribucionAulasService::class);
+
+    $servicio->agregar($examen, ['id_aul' => $aula->id_aul, 'id_are' => Area::factory()->create()->id_are, 'capacidad_eau' => 24]);
+
+    expect(fn () => $servicio->agregar($examen, [
+        'id_aul' => $aula->id_aul,
+        'id_are' => Area::factory()->create()->id_are,
+        'capacidad_eau' => 16,
+    ]))->toThrow(RuntimeException::class)
+        ->and(ExamenAula::query()->where('id_exa', $examen->id_exa)->count())->toBe(1);
+});
+
 it('compara la capacidad de cada area con los inscritos del proceso', function () {
     $examen = Examen::factory()->create();
     $area = Area::factory()->create();

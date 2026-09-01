@@ -6,7 +6,6 @@ use App\Livewire\Forms\ExamenForm;
 use App\Models\Area;
 use App\Models\Aula;
 use App\Models\Examen;
-use App\Models\ExamenAula;
 use App\Models\Proceso;
 use App\Services\Admision\DistribucionAulasService;
 use App\Services\Admision\SorteadorAulasService;
@@ -78,15 +77,8 @@ class extends Component
             return;
         }
 
-        $filas = $examen->aulas()->get()->map(fn (ExamenAula $fila): array => [
-            'id_aul' => $fila->id_aul,
-            'id_are' => $fila->id_are,
-            'capacidad_eau' => $fila->capacidad_eau,
-        ])->all();
-        $filas[] = ['id_aul' => $this->formAula->aula, 'id_are' => $this->formAula->area, 'capacidad_eau' => $this->formAula->capacidad];
-
         try {
-            $servicio->guardar($examen, $filas);
+            $servicio->agregar($examen, ['id_aul' => $this->formAula->aula, 'id_are' => $this->formAula->area, 'capacidad_eau' => $this->formAula->capacidad]);
         } catch (RuntimeException $error) {
             $this->addError('formAula.aula', $error->getMessage());
 
@@ -105,9 +97,7 @@ class extends Component
             return;
         }
 
-        $servicio->guardar($examen, $examen->aulas()->where('id_eau', '!=', $id)->get()->map(fn (ExamenAula $fila): array => [
-            'id_aul' => $fila->id_aul, 'id_are' => $fila->id_are, 'capacidad_eau' => $fila->capacidad_eau,
-        ])->all());
+        $servicio->retirar($examen, $id);
     }
 
     public function sortear(SorteadorAulasService $sorteador, DistribucionAulasService $distribucion): void
@@ -137,14 +127,16 @@ class extends Component
     public function with(DistribucionAulasService $servicio): array
     {
         $examen = $this->examen();
+        $distribucion = $examen?->aulas()->with(['aula.sede', 'area'])->orderBy('id_eau')->get() ?? collect();
+        $aulasOcupadas = $distribucion->pluck('id_aul');
 
         return [
             'procesos' => Proceso::query()->orderByDesc('anio_pro')->get(),
             'examenes' => $this->procesoSeleccionado === '' ? collect() : Examen::query()->where('id_pro', $this->procesoSeleccionado)->orderBy('fecha_exa')->get(),
             'examen' => $examen,
-            'aulas' => Aula::query()->habilitado()->with('sede')->ordenadas()->get(),
+            'aulas' => Aula::query()->habilitado()->whereNotIn('id_aul', $aulasOcupadas)->with('sede')->ordenadas()->get(),
             'areas' => Area::query()->habilitado()->orderBy('numero_are')->get(),
-            'distribucion' => $examen?->aulas()->with(['aula.sede', 'area'])->orderBy('id_eau')->get() ?? collect(),
+            'distribucion' => $distribucion,
             'totales' => $examen === null ? collect() : $servicio->totalesPorArea($examen),
         ];
     }
