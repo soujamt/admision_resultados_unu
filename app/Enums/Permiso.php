@@ -62,6 +62,10 @@ enum Permiso: string
     case InscripcionesExportar = 'inscripciones.exportar';
     case InscripcionesEliminar = 'inscripciones.eliminar';
 
+    case ResultadosVer = 'resultados.ver';
+    case ResultadosConfigurarAulas = 'resultados.configurar-aulas';
+    case ResultadosSortearAulas = 'resultados.sortear-aulas';
+
     public function etiqueta(): string
     {
         return match ($this) {
@@ -103,6 +107,9 @@ enum Permiso: string
             self::InscripcionesImportar => 'Importar inscripciones',
             self::InscripcionesExportar => 'Exportar inscripciones',
             self::InscripcionesEliminar => 'Eliminar inscripciones',
+            self::ResultadosVer => 'Ver resultados y aulas de examen',
+            self::ResultadosConfigurarAulas => 'Configurar distribución de aulas',
+            self::ResultadosSortearAulas => 'Sortear aulas y asientos',
         };
     }
 

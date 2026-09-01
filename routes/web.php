@@ -33,5 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::livewire('/inscripciones', 'pages::inscripciones')->name('inscripciones.index');
     Route::get('/inscripciones/{inscripcion}/foto', MostrarFotoController::class)->name('inscripciones.foto');
 
+    Route::livewire('/resultados/aulas', 'pages::resultados.aulas')->name('resultados.aulas');
+
     Route::post('/salir', SalirController::class)->name('auth.salir');
 });

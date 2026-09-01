@@ -57,6 +57,17 @@
                 </flux:sidebar.item>
             @endcan
 
+            @can(App\Enums\Permiso::ResultadosVer->value)
+                <flux:sidebar.item
+                    icon="building-library"
+                    :href="route('resultados.aulas')"
+                    :current="request()->routeIs('resultados.*')"
+                    wire:navigate
+                >
+                    Examen y aulas
+                </flux:sidebar.item>
+            @endcan
+
             @if (app(App\Services\Auth\AccesoService::class)->puedeAlguno(auth()->user(), [
                 App\Enums\Permiso::ProcesosVer,
                 App\Enums\Permiso::VacantesVer,
