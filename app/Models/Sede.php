@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Enums\EstadoRegistro;
 use App\Models\Concerns\TieneEstado;
 use Database\Factories\SedeFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -63,4 +62,14 @@ class Sede extends Model
         return $this->hasMany(Aula::class, 'id_sed', 'id_sed');
     }
 
+    /**
+     * Sigla usada en los padrones y resultados oficiales.
+     */
+    public function abreviatura(): string
+    {
+        return match ($this->codigo_sed) {
+            'CORONEL_PORTILLO' => 'SCP-C',
+            default => $this->codigo_sed,
+        };
+    }
 }
