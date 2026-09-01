@@ -1,0 +1,242 @@
+@import 'tailwindcss';
+@import '../../vendor/livewire/flux/dist/flux.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --font-sans:
+        Inter, 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /** Color Scale: Rose **/
+    --color-rose-50: oklch(1.0000000000000002 0 none);
+    --color-rose-100: oklch(0.9500408318497584 0.025259802714154046 11.581757554459305);
+    --color-rose-200: oklch(0.9113233856679428 0.04600287603769307 14.711185084129006);
+    --color-rose-300: oklch(0.8673758899001427 0.07141800543347786 16.48750102246031);
+    --color-rose-400: oklch(0.8188086115290332 0.10186428785819704 19.490152728047022);
+    --color-rose-500: oklch(0.7480024763047918 0.15235346250626305 20.900898800283706);
+    --color-rose-600: oklch(0.6726335461088655 0.1983767191763081 21.166951754225696);
+    --color-rose-700: oklch(0.5687718550918514 0.16654904420123215 21.607788131237502);
+    --color-rose-800: oklch(0.45147412009306126 0.1353932905538646 21.14045034274781);
+    --color-rose-900: oklch(0.3120609327160167 0.09998413365338875 21.355904439358262);
+    --color-rose-950: oklch(0.2417302679920255 0.07477310207324675 21.38187126531236);
+
+    /** Color Scale: Green **/
+    --color-green-50: oklch(0.972 0.021 145);
+    --color-green-100: oklch(0.94 0.045 145);
+    --color-green-200: oklch(0.89 0.08 145);
+    --color-green-300: oklch(0.822 0.117 145);
+    --color-green-400: oklch(0.74 0.15 145);
+    --color-green-500: oklch(0.665 0.164 145);
+    --color-green-600: oklch(0.572 0.15 145);
+    --color-green-700: oklch(0.478 0.126 146);
+    --color-green-800: oklch(0.398 0.103 146);
+    --color-green-900: oklch(0.34 0.086 147);
+    --color-green-950: oklch(0.226 0.058 148);
+
+    /** Color Scale: Lime **/
+    --color-lime-50: oklch(98.6% 0.02 121);
+    --color-lime-100: oklch(96.7% 0.044 122);
+    --color-lime-200: oklch(93.8% 0.083 124);
+    --color-lime-300: oklch(89.7% 0.128 127);
+    --color-lime-400: oklch(81.7% 0.154 131);
+    --color-lime-500: oklch(76.8% 0.152 131);
+    --color-lime-600: oklch(64.8% 0.13 132);
+    --color-lime-700: oklch(53.2% 0.102 132);
+    --color-lime-800: oklch(45.3% 0.081 131);
+    --color-lime-900: oklch(40.5% 0.066 131);
+    --color-lime-950: oklch(27.4% 0.047 132);
+
+    /** Color Scale: Emerald **/
+    --color-emerald-50: oklch(1.0000000000000002 0 none);
+    --color-emerald-100: oklch(0.9538851595587163 0.07133477657259465 157.1330891749714);
+    --color-emerald-200: oklch(0.9464150644378908 0.08392736471840719 156.9600696588461);
+    --color-emerald-300: oklch(0.9401503523098002 0.09579703069915242 155.5039306829381);
+    --color-emerald-400: oklch(0.8939626968030596 0.08824679921132421 155.24895806381758);
+    --color-emerald-500: oklch(0.8174448672515326 0.07855602546193391 155.79771588361908);
+    --color-emerald-600: oklch(0.7148006222802158 0.06751879784249389 155.43278465267147);
+    --color-emerald-700: oklch(0.5925021998859005 0.054523578041338 155.21999779018623);
+    --color-emerald-800: oklch(0.4484326384498603 0.04182601001374132 155.6858000694704);
+    --color-emerald-900: oklch(0.29432875534233344 0.03011209730650554 155.71483505861985);
+    --color-emerald-950: oklch(0.22612332999743412 0.020762752762748683 156.41588596911453);
+
+    /** Color Scale: Teal **/
+    --color-teal-50: oklch(0.9846989169896145 0.020890424573165766 178.38992874309113);
+    --color-teal-100: oklch(0.9395409926809916 0.08932666198910683 169.19731534738352);
+    --color-teal-200: oklch(0.9206409027594843 0.12092803496906424 168.38423842651827);
+    --color-teal-300: oklch(0.9158899390800347 0.1301247760891527 166.3943304137204);
+    --color-teal-400: oklch(0.873991535921062 0.12081854675652051 165.81853462738368);
+    --color-teal-500: oklch(0.8006750370598748 0.10667669464097322 165.8712445825009);
+    --color-teal-600: oklch(0.7011991791817141 0.09078490309032239 166.18907279308098);
+    --color-teal-700: oklch(0.5815138220664237 0.07432590521194374 166.48424620856787);
+    --color-teal-800: oklch(0.44433022871919625 0.05785788816066948 165.5289530306419);
+    --color-teal-900: oklch(0.2912012932983533 0.040040919357694695 166.04593535370032);
+    --color-teal-950: oklch(0.22846519752839067 0.029771317219988953 164.89493482553792);
+
+    /** Color Scale: Sky **/
+    --color-sky-50: oklch(1.0000000000000002 0 none);
+    --color-sky-100: oklch(0.9644286367516633 0.025873524479526393 217.93357637126567);
+    --color-sky-200: oklch(0.9350138398501541 0.04762013552620153 218.07354034760394);
+    --color-sky-300: oklch(0.904856798673832 0.06808629892840232 219.79553903840053);
+    --color-sky-400: oklch(0.8786079745485704 0.0744495352064059 229.87416821350277);
+    --color-sky-500: oklch(0.8114752478768482 0.06693079447216649 230.71853993410792);
+    --color-sky-600: oklch(0.7122590325244822 0.05809967987527841 233.07758326501494);
+    --color-sky-700: oklch(0.5909118760937139 0.04723003651635523 231.65149780581794);
+    --color-sky-800: oklch(0.4501106620754666 0.037010247355093735 234.26255398948862);
+    --color-sky-900: oklch(0.2953288779943966 0.024773788650746344 231.94322100474346);
+    --color-sky-950: oklch(0.22872101839739215 0.01981070767080426 239.25384797800012);
+
+    /** Color Scale: Yellow **/
+    --color-yellow-50: oklch(98.7% 0.016 102);
+    --color-yellow-100: oklch(97.3% 0.045 103);
+    --color-yellow-200: oklch(94.5% 0.081 102);
+    --color-yellow-300: oklch(90.5% 0.115 98);
+    --color-yellow-400: oklch(85.2% 0.126 92);
+    --color-yellow-500: oklch(80.1% 0.117 86);
+    --color-yellow-600: oklch(68.1% 0.102 76);
+    --color-yellow-700: oklch(55.4% 0.085 66);
+    --color-yellow-800: oklch(47.6% 0.072 62);
+    --color-yellow-900: oklch(42.1% 0.06 58);
+    --color-yellow-950: oklch(28.6% 0.042 54);
+
+    /** Color Scale: Purple **/
+    --color-purple-50: oklch(97.7% 0.007 308);
+    --color-purple-100: oklch(94.6% 0.016 307);
+    --color-purple-200: oklch(90.2% 0.031 307);
+    --color-purple-300: oklch(82.7% 0.059 306);
+    --color-purple-400: oklch(71.4% 0.1 306);
+    --color-purple-500: oklch(63.1% 0.129 304);
+    --color-purple-600: oklch(55.8% 0.142 302);
+    --color-purple-700: oklch(49.6% 0.13 302);
+    --color-purple-800: oklch(43.8% 0.107 304);
+    --color-purple-900: oklch(38.1% 0.087 305);
+    --color-purple-950: oklch(29.1% 0.073 303);
+
+    /** Color Scale: Blue **/
+    --color-blue-50: oklch(97.1% 0.009 251);
+    --color-blue-100: oklch(93.4% 0.021 252);
+    --color-blue-200: oklch(88.4% 0.039 250);
+    --color-blue-300: oklch(81.1% 0.07 248);
+    --color-blue-400: oklch(71.1% 0.108 250);
+    --color-blue-500: oklch(60.3% 0.144 255);
+    --color-blue-600: oklch(55% 0.156 259);
+    --color-blue-700: oklch(48.9% 0.153 260);
+    --color-blue-800: oklch(42.6% 0.125 261);
+    --color-blue-900: oklch(38% 0.093 261);
+    --color-blue-950: oklch(28.3% 0.058 263);
+
+    /** Color Scale: Orange **/
+    --color-orange-50: oklch(1.0000000000000002 0 none);
+    --color-orange-100: oklch(0.9569372043573932 0.02617169600769053 58.29258469839654);
+    --color-orange-200: oklch(0.9311222919759887 0.042562782503203125 58.10571572568959);
+    --color-orange-300: oklch(0.902134620565718 0.06604702694332089 63.12356556026368);
+    --color-orange-400: oklch(0.8592705003867648 0.09781075868562608 62.93498108244382);
+    --color-orange-500: oklch(0.8085147079068119 0.13684576614523372 62.02206323840395);
+    --color-orange-600: oklch(0.7252626652038886 0.13312270602846343 57.467250983478436);
+    --color-orange-700: oklch(0.6036372621891786 0.10975229631014047 57.38330888797277);
+    --color-orange-800: oklch(0.4617283310528665 0.08528992094785007 56.91981025375645);
+    --color-orange-900: oklch(0.30223753212521937 0.058463543393361815 57.51635291255957);
+    --color-orange-950: oklch(0.23219467231519836 0.04256842247402532 59.08222893164908);
+
+    --color-zinc-50: var(--color-neutral-50);
+    --color-zinc-100: var(--color-neutral-100);
+    --color-zinc-200: var(--color-neutral-200);
+    --color-zinc-300: var(--color-neutral-300);
+    --color-zinc-400: var(--color-neutral-400);
+    --color-zinc-500: var(--color-neutral-500);
+    --color-zinc-600: var(--color-neutral-600);
+    --color-zinc-700: var(--color-neutral-700);
+    --color-zinc-800: var(--color-neutral-800);
+    --color-zinc-900: var(--color-neutral-900);
+    --color-zinc-950: var(--color-neutral-950);
+
+    --color-accent: var(--color-unu-600);
+    --color-accent-content: var(--color-unu-700);
+    --color-accent-foreground: var(--color-white);
+
+    /** Identidad institucional UNU. Derivada del verde del escudo (#00FF01),
+     ** que en crudo es ilegible como color de interfaz: se conserva el matiz
+     ** y se ajustan luminosidad y croma. **/
+    --color-unu-50: oklch(0.965 0.03 145);
+    --color-unu-100: oklch(0.93 0.065 145);
+    --color-unu-200: oklch(0.878 0.101 145);
+    --color-unu-300: oklch(0.808 0.139 144);
+    --color-unu-400: oklch(0.729 0.166 144);
+    --color-unu-500: oklch(0.655 0.174 145);
+    --color-unu-600: oklch(0.565 0.153 145);
+    --color-unu-700: oklch(0.47 0.127 146);
+    --color-unu-800: oklch(0.392 0.103 146);
+    --color-unu-900: oklch(0.326 0.083 147);
+    --color-unu-950: oklch(0.22 0.056 148);
+}
+
+/*
+ * Fondo de los modales y flyouts de Flux. Sin esto usan el ::backdrop por
+ * defecto del navegador, que es un gris translúcido apenas perceptible: el
+ * contenido de atrás compite con el formulario. Se iguala al de la alerta.
+ */
+ui-modal dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.5);
+    backdrop-filter: blur(4px);
+}
+
+/*
+ * Foco de los campos: se tiñe el borde, sin anillo ni contorno.
+ *
+ * Un `ring` se dibuja como sombra y necesita color de separación, que sobre
+ * una tarjeta blanca no se distingue; un `outline` se pinta por fuera de la
+ * caja y se ve como una segunda línea suelta. El borde ya está ahí y solo
+ * cambia de color, así que nada se mueve ni se superpone.
+ *
+ * Los campos con error conservan el borde rojo: el foco no debe tapar que hay
+ * algo que corregir.
+ */
+[data-flux-control]:focus:not([data-invalid]),
+[data-select-trigger]:focus:not([data-invalid]) {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+/*
+ * Los campos de Flux son rejillas. Cuando en una fila un campo muestra su
+ * mensaje de error, la fila crece y el campo vecino —más corto— reparte ese
+ * espacio entre sus filas, con lo que su control queda desalineado del otro.
+ * Anclando el contenido arriba, la etiqueta y el control se quedan donde están.
+ */
+ui-field {
+    align-content: start;
+}
+
+@layer theme {
+    .dark {
+        --color-accent: var(--color-unu-600);
+        --color-accent-content: var(--color-unu-400);
+        --color-accent-foreground: var(--color-white);
+    }
+}
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-zinc-200, currentColor);
+    }
+
+    button,
+    [role='button'] {
+        cursor: pointer;
+    }
+}
+
+[data-flux-field]:not(ui-radio, ui-checkbox) {
+    @apply grid gap-2;
+}
+
+[data-flux-label] {
+    @apply mb-0! leading-tight!;
+}
