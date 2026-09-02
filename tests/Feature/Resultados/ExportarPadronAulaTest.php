@@ -43,12 +43,23 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
     ]);
 
     foreach (range(1, 40) as $asiento) {
+        $nombrePostulante = match ($asiento) {
+            10 => ['primer_apellido_pos' => 'ÁLVAREZ', 'segundo_apellido_pos' => 'ROJAS', 'nombres_pos' => 'ANA'],
+            20 => ['primer_apellido_pos' => 'BENITES', 'segundo_apellido_pos' => 'DÍAZ', 'nombres_pos' => 'BRUNO'],
+            30 => ['primer_apellido_pos' => 'ZÚÑIGA', 'segundo_apellido_pos' => 'PÉREZ', 'nombres_pos' => 'ZOILA'],
+            default => [
+                'primer_apellido_pos' => 'ZZZ',
+                'segundo_apellido_pos' => str_pad((string) $asiento, 2, '0', STR_PAD_LEFT),
+                'nombres_pos' => 'POSTULANTE',
+            ],
+        };
         $inscripcion = Inscripcion::factory()->create([
             'id_pro' => $examen->id_pro,
             'id_car' => $carrera->id_car,
             'id_sed' => $sede->id_sed,
             'id_pos' => Postulante::factory()->create([
                 'numero_documento_pos' => (string) (87654320 + $asiento),
+                ...$nombrePostulante,
             ]),
             'codigo_ins' => '2027-I-'.str_pad((string) $asiento, 4, '0', STR_PAD_LEFT),
         ]);
@@ -69,7 +80,8 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
     $this->actingAs(Usuario::factory()->administrador()->create())
         ->get(route('resultados.aulas.padron', $aulaExamen))
         ->assertOk()
-        ->assertHeader('content-type', 'application/pdf');
+        ->assertHeader('content-type', 'application/pdf')
+        ->assertDownload('padron-aula-aula-1.pdf');
 
     expect($proceso->convocatoria_pro)->toBe(Convocatoria::Primera);
     expect($html)->toContain(
@@ -80,4 +92,5 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
         'PUCALLPA',
         '87654321',
     );
+    expect($html)->toMatch('/<th>Apellidos y nombres<\/th>\s*<th>Asiento<\/th>/');
 });

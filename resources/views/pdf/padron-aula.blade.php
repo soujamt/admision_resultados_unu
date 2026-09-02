@@ -153,21 +153,17 @@
 
         <table class="listado">
             <colgroup>
-                <col style="width: 5%">
-                <col style="width: 8%">
-                <col style="width: 14%">
-                <col style="width: 13%">
-                <col style="width: 44%">
-                <col style="width: 16%">
+                <col style="width: 10%">
+                <col style="width: 20%">
+                <col style="width: 50%">
+                <col style="width: 20%">
             </colgroup>
             <thead>
                 <tr>
                     <th>N°</th>
-                    <th>Asiento</th>
-                    <th>Código de inscripción</th>
                     <th>Documento</th>
                     <th>Apellidos y nombres</th>
-                    <th>Firma</th>
+                    <th>Asiento</th>
                 </tr>
             </thead>
             <tbody>
@@ -175,15 +171,13 @@
                     @php($inscripcion = $asignacion->inscripcion)
                     <tr>
                         <td class="centro">{{ $indice + 1 }}</td>
-                        <td class="centro">{{ $asignacion->asiento_ase }}</td>
-                        <td class="centro">{{ $inscripcion->codigo_ins }}</td>
                         <td class="centro">{{ $inscripcion->postulante->numero_documento_pos }}</td>
                         <td>{{ $inscripcion->postulante->nombreCompleto() }}</td>
-                        <td></td>
+                        <td class="centro">{{ $asignacion->asiento_ase }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="centro">Todavía no se ha ejecutado el sorteo para esta aula.</td>
+                        <td colspan="4" class="centro">Todavía no se ha ejecutado el sorteo para esta aula.</td>
                     </tr>
                 @endforelse
             </tbody>
