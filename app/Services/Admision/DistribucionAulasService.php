@@ -2,11 +2,13 @@
 
 namespace App\Services\Admision;
 
+use App\Exceptions\Admision\AulaYaAsignadaException;
 use App\Models\Area;
 use App\Models\Aula;
 use App\Models\Examen;
 use App\Models\ExamenAula;
 use App\Models\Inscripcion;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -15,13 +17,11 @@ use Throwable;
 /**
  * Reparto de las aulas de una jornada entre las areas academicas.
  *
- * Cada aula se asigna a una sola area y admite como maximo 40 postulantes,
- * siempre que su capacidad fisica tambien lo permita.
+ * Cada aula se asigna a una sola area y su limite de postulantes es la
+ * capacidad configurada en el catalogo de aulas.
  */
 class DistribucionAulasService
 {
-    public const CAPACIDAD_MAXIMA = 40;
-
     /**
      * @param  array{id_aul:int, id_are:int, capacidad_eau:int}  $fila
      */
@@ -31,12 +31,13 @@ class DistribucionAulasService
             return DB::transaction(function () use ($examen, $fila): ExamenAula {
                 $this->validarFila($fila);
 
-                if ($this->yaAsignada($examen, $fila['id_aul'])) {
-                    throw new RuntimeException('Esta aula ya está asignada a la jornada seleccionada.');
-                }
-
                 return ExamenAula::create($fila + ['id_exa' => $examen->id_exa]);
             }, 3);
+        } catch (UniqueConstraintViolationException $error) {
+            throw new AulaYaAsignadaException(
+                'Esta aula ya está asignada a la jornada seleccionada.',
+                previous: $error,
+            );
         } catch (RuntimeException $error) {
             throw $error;
         } catch (Throwable $error) {
@@ -44,19 +45,6 @@ class DistribucionAulasService
 
             throw new RuntimeException('No se pudo agregar el aula. Inténtalo nuevamente.');
         }
-    }
-
-    /**
-     * Si el aula ya forma parte de la distribucion de la jornada. La pantalla
-     * lo consulta antes de guardar para poder senalar el campo correcto en vez
-     * de dejar que salte la excepcion.
-     */
-    public function yaAsignada(Examen $examen, int $idAula): bool
-    {
-        return ExamenAula::query()
-            ->where('id_exa', $examen->id_exa)
-            ->where('id_aul', $idAula)
-            ->exists();
     }
 
     public function retirar(Examen $examen, int $idAulaExamen): bool
@@ -114,7 +102,7 @@ class DistribucionAulasService
             throw new RuntimeException('Una de las aulas seleccionadas no existe.');
         }
 
-        $capacidadPermitida = min(self::CAPACIDAD_MAXIMA, $aula->capacidad_aul);
+        $capacidadPermitida = $aula->capacidad_aul;
 
         if ($fila['capacidad_eau'] < 1 || $fila['capacidad_eau'] > $capacidadPermitida) {
             throw new RuntimeException(

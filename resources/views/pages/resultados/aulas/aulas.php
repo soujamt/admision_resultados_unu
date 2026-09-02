@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Permiso;
+use App\Exceptions\Admision\AulaYaAsignadaException;
 use App\Livewire\Forms\DistribucionAulaForm;
 use App\Livewire\Forms\ExamenForm;
 use App\Models\Area;
@@ -124,19 +125,12 @@ class extends Component
 
         $this->formAula->validate();
 
-        /*
-         * Se comprueba antes de guardar para poder senalar el campo del aula.
-         * El servicio vuelve a comprobarlo: es el que protege la regla cuando
-         * la distribucion se arma desde el comando o desde otra pantalla.
-         */
-        if ($servicio->yaAsignada($examen, (int) $this->formAula->aula)) {
-            $this->addError('formAula.aula', 'Esa aula ya está en la distribución de esta jornada.');
-
-            return;
-        }
-
         try {
             $servicio->agregar($examen, $this->formAula->datos());
+        } catch (AulaYaAsignadaException $error) {
+            $this->addError('formAula.aula', $error->getMessage());
+
+            return;
         } catch (RuntimeException $error) {
             $this->addError('formAula.capacidad', $error->getMessage());
 

@@ -12,7 +12,7 @@ class DistribucionAulaForm extends Form
 
     public ?int $area = null;
 
-    public int $capacidad = 40;
+    public ?int $capacidad = null;
 
     /** @return array<string, mixed> */
     public function rules(): array
@@ -20,7 +20,7 @@ class DistribucionAulaForm extends Form
         return [
             'aula' => ['required', 'integer', Rule::exists('tbl_aula', 'id_aul')->whereNull('deleted_at')],
             'area' => ['required', 'integer', Rule::exists((new Area)->getTable(), 'id_are')->whereNull('deleted_at')],
-            'capacidad' => ['required', 'integer', 'min:1', 'max:40'],
+            'capacidad' => ['required', 'integer', 'min:1'],
         ];
     }
 
@@ -40,7 +40,6 @@ class DistribucionAulaForm extends Form
         return [
             'aula.required' => 'Elige el aula que se va a usar.',
             'area.required' => 'Elige a qué área pertenece el aula.',
-            'capacidad.max' => 'La capacidad máxima permitida por aula es 40.',
         ];
     }
 

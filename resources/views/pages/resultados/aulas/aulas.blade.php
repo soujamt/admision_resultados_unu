@@ -12,8 +12,8 @@
 
     <flux:callout icon="information-circle" variant="secondary">
         <flux:callout.text>
-            Un aula pertenece a una sola área en una jornada y admite como máximo 40 postulantes,
-            sin superar su capacidad física.
+            Un aula pertenece a una sola área en una jornada y no puede superar la capacidad
+            registrada en Configuración › Aulas.
             La suma de capacidades debe coincidir exactamente con los inscritos de cada área.
         </flux:callout.text>
     </flux:callout>
@@ -109,7 +109,7 @@
                                     @if (isset($aulasAsignadas[$aula->id_aul]))
                                         (ya asignada)
                                     @else
-                                        (máximo {{ min(40, $aula->capacidad_aul) }})
+                                        (capacidad {{ $aula->capacidad_aul }})
                                     @endif
                                 </flux:select.option>
                             @endforeach
@@ -125,23 +125,13 @@
                             wire:model="formAula.capacidad"
                             type="number"
                             min="1"
-                            max="40"
                             label="Postulantes"
-                            placeholder="Hasta 40"
+                            placeholder="Cantidad a asignar"
                         />
                     </div>
 
                     <div class="flex justify-end">
-                        <flux:button
-                            type="submit"
-                            variant="primary"
-                            icon="plus"
-                            wire:loading.attr="disabled"
-                            wire:target="agregarAula"
-                        >
-                            <span wire:loading.remove wire:target="agregarAula">Agregar aula</span>
-                            <span wire:loading wire:target="agregarAula">Agregando…</span>
-                        </flux:button>
+                        <flux:button type="submit" variant="primary" icon="plus">Agregar aula</flux:button>
                     </div>
                 </form>
 

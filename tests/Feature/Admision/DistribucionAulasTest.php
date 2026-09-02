@@ -21,14 +21,20 @@ it('no permite asignar mas postulantes que carpetas tiene el aula', function () 
     ]]))->toThrow(RuntimeException::class);
 });
 
-it('mantiene el maximo de cuarenta aunque el aula tenga mas carpetas', function () {
+it('permite usar hasta la capacidad registrada para el aula', function () {
     $examen = Examen::factory()->create();
+    $aula = Aula::factory()->create(['capacidad_aul' => 50]);
 
-    expect(fn () => app(DistribucionAulasService::class)->guardar($examen, [[
-        'id_aul' => Aula::factory()->create(['capacidad_aul' => 50])->id_aul,
+    app(DistribucionAulasService::class)->guardar($examen, [[
+        'id_aul' => $aula->id_aul,
         'id_are' => Area::factory()->create()->id_are,
         'capacidad_eau' => 42,
-    ]]))->toThrow(RuntimeException::class);
+    ]]);
+
+    expect(ExamenAula::query()
+        ->where('id_exa', $examen->id_exa)
+        ->where('id_aul', $aula->id_aul)
+        ->value('capacidad_eau'))->toBe(42);
 });
 
 it('no permite repetir un aula en dos áreas', function () {
@@ -85,8 +91,8 @@ it('compara la capacidad de cada area con los inscritos del proceso', function (
 });
 
 /*
- * El reparto de 2027-I: 379 inscritos, un area por aula y no mas de cuarenta
- * postulantes en cada una.
+ * El reparto de 2027-I: 379 inscritos, un area por aula y sin superar la
+ * capacidad registrada de cada aula.
  */
 it('acepta el reparto completo de 2027-I y lo da por cuadrado', function () {
     $examen = Examen::factory()->create();

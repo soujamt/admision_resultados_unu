@@ -8,8 +8,8 @@ use App\Models\Sede;
 use Illuminate\Database\Seeder;
 
 /**
- * Quince aulas iniciales de la sede Coronel Portillo para las jornadas de
- * examen, con el maximo operativo de cuarenta postulantes definido por admision.
+ * Quince aulas iniciales de la sede Coronel Portillo. La capacidad indicada
+ * aqui es solo el valor inicial y puede modificarse desde Configuracion > Aulas.
  */
 class AulasInicialesSeeder extends Seeder
 {

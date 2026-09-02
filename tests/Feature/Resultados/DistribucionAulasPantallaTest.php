@@ -54,7 +54,7 @@ it('deja el formulario vacío después de agregar, para que el aula anterior no 
         ->call('agregarAula')
         ->assertSet('formAula.aula', null)
         ->assertSet('formAula.area', null)
-        ->assertSet('formAula.capacidad', 40);
+        ->assertSet('formAula.capacidad', null);
 });
 
 it('mantiene las aulas en el desplegable y marca las asignadas', function () {
@@ -74,17 +74,17 @@ it('mantiene las aulas en el desplegable y marca las asignadas', function () {
         ->and($componente->viewData('aulasAsignadas'))->toHaveKey($aula->id_aul);
 });
 
-it('propone cuarenta como capacidad inicial', function () {
+it('no impone una capacidad fija antes de que el usuario distribuya el aula', function () {
     ['examen' => $examen, 'aula' => $aula, 'usuario' => $usuario] = jornadaConAula(capacidadAula: 24);
 
     Livewire::actingAs($usuario)
         ->test('pages::resultados.aulas')
         ->set('examenSeleccionado', (string) $examen->id_exa)
         ->set('formAula.aula', $aula->id_aul)
-        ->assertSet('formAula.capacidad', 40);
+        ->assertSet('formAula.capacidad', null);
 });
 
-it('rechaza mas de cuarenta aunque el aula tenga carpetas de sobra', function () {
+it('permite más de cuarenta si esa es la capacidad registrada del aula', function () {
     ['examen' => $examen, 'aula' => $aula, 'area' => $area, 'usuario' => $usuario] = jornadaConAula(capacidadAula: 50);
 
     Livewire::actingAs($usuario)
@@ -94,9 +94,11 @@ it('rechaza mas de cuarenta aunque el aula tenga carpetas de sobra', function ()
         ->set('formAula.area', $area->id_are)
         ->set('formAula.capacidad', 42)
         ->call('agregarAula')
-        ->assertHasErrors(['formAula.capacidad' => 'max']);
+        ->assertHasNoErrors();
 
-    expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(0);
+    expect(ExamenAula::query()
+        ->where('id_exa', $examen->id_exa)
+        ->value('capacidad_eau'))->toBe(42);
 });
 
 it('señala el campo de postulantes cuando se pide más de lo que cabe en el aula', function () {
@@ -110,7 +112,8 @@ it('señala el campo de postulantes cuando se pide más de lo que cabe en el aul
         ->set('formAula.capacidad', 40)
         ->call('agregarAula')
         ->assertHasErrors('formAula.capacidad')
-        ->assertHasNoErrors('formAula.aula');
+        ->assertHasNoErrors('formAula.aula')
+        ->assertSee('permite hasta 24 postulantes');
 
     expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(0);
 });
