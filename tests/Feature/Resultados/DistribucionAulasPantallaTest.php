@@ -158,6 +158,38 @@ it('deshabilita en el desplegable las aulas que ya están asignadas', function (
         ->and($componente->viewData('aulasAsignadas'))->toHaveKey($aula->id_aul);
 });
 
+it('mantiene una opción vacía real aunque las primeras aulas estén asignadas', function () {
+    ['examen' => $examen, 'aula' => $primeraAula, 'area' => $area, 'usuario' => $usuario] = jornadaConAula();
+    $primeraAula->update(['orden_aul' => 1]);
+    $aulas = collect([$primeraAula])->concat(Aula::factory()
+        ->count(2)
+        ->sequence(['orden_aul' => 2], ['orden_aul' => 3])
+        ->create());
+
+    foreach ($aulas->take(2) as $aula) {
+        ExamenAula::create([
+            'id_exa' => $examen->id_exa,
+            'id_aul' => $aula->id_aul,
+            'id_are' => $area->id_are,
+            'capacidad_eau' => 24,
+        ]);
+    }
+
+    $html = Livewire::actingAs($usuario)
+        ->test('pages::resultados.aulas')
+        ->set('examenSeleccionado', (string) $examen->id_exa)
+        ->html();
+
+    $encontrada = preg_match(
+        '/<option\s+[^>]*value=""[^>]*>\s*Elige un aula\s*<\/option>/s',
+        $html,
+        $opcionVacia,
+    );
+
+    expect($encontrada)->toBe(1)
+        ->and($opcionVacia[0])->not->toContain('disabled');
+});
+
 it('limpia el formulario al retirar un aula, porque vuelve al desplegable', function () {
     ['examen' => $examen, 'aula' => $aula, 'area' => $area, 'usuario' => $usuario] = jornadaConAula();
 

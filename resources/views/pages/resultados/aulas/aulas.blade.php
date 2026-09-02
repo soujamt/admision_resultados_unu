@@ -98,8 +98,9 @@
                             wire:model="formAula.aula"
                             wire:key="aulas-jornada-{{ $examen->id_exa }}"
                             label="Aula"
-                            placeholder="Elige un aula"
                         >
+                            <flux:select.option value="">Elige un aula</flux:select.option>
+
                             @foreach ($aulas as $aula)
                                 <flux:select.option
                                     :value="$aula->id_aul"
@@ -115,7 +116,9 @@
                             @endforeach
                         </flux:select>
 
-                        <flux:select wire:model="formAula.area" label="Área" placeholder="Elige un área">
+                        <flux:select wire:model="formAula.area" label="Área">
+                            <flux:select.option value="">Elige un área</flux:select.option>
+
                             @foreach ($areas as $area)
                                 <flux:select.option :value="$area->id_are">{{ $area->etiqueta() }}</flux:select.option>
                             @endforeach
