@@ -145,7 +145,7 @@
             <div class="linea-cabecera">VICERRECTORADO ACADÉMICO</div>
             <div class="linea-cabecera">DIRECCIÓN DE ADMISIÓN</div>
             <div class="linea-cabecera">{{ $aulaExamen->examen->proceso->tituloConvocatoria() }}</div>
-            <div class="linea-cabecera">{{ mb_strtoupper($aulaExamen->examen->nombre_exa) }}</div>
+            <div class="linea-cabecera">{{ mb_strtoupper($modalidadCabecera) }}</div>
             <div class="linea-cabecera">{{ $aulaExamen->aula->sede->ubicacionCabecera() }}</div>
         </header>
 

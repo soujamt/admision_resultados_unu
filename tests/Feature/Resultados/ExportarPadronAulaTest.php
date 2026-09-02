@@ -8,6 +8,7 @@ use App\Models\Carrera;
 use App\Models\Examen;
 use App\Models\ExamenAula;
 use App\Models\Inscripcion;
+use App\Models\Modalidad;
 use App\Models\Postulante;
 use App\Models\Proceso;
 use App\Models\Sede;
@@ -24,6 +25,7 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
         'numero_are' => 2,
         'nombre_are' => 'Ciencias de la Salud',
     ]);
+    $modalidad = Modalidad::factory()->create(['nombre_mod' => 'Exoneración - CEPREUNU']);
     $carrera = Carrera::factory()->create(['id_are' => $area->id_are]);
     $sede = Sede::factory()->create([
         'codigo_sed' => 'CORONEL_PORTILLO',
@@ -55,6 +57,7 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
         };
         $inscripcion = Inscripcion::factory()->create([
             'id_pro' => $examen->id_pro,
+            'id_mod' => $modalidad->id_mod,
             'id_car' => $carrera->id_car,
             'id_sed' => $sede->id_sed,
             'id_pos' => Postulante::factory()->create([
@@ -70,11 +73,12 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
         ]);
     }
 
-    $aulaExamen->load(['examen.proceso', 'area', 'aula.sede', 'asignaciones.inscripcion.postulante']);
+    $aulaExamen->load(['examen.proceso', 'area', 'aula.sede', 'asignaciones.inscripcion.modalidad', 'asignaciones.inscripcion.postulante']);
     $asignaciones = $aulaExamen->asignaciones->sortBy('asiento_ase');
     $html = view('pdf.padron-aula', [
         'aulaExamen' => $aulaExamen,
         'asignaciones' => $asignaciones,
+        'modalidadCabecera' => $modalidad->nombre_mod,
     ])->render();
 
     $this->actingAs(Usuario::factory()->administrador()->create())
@@ -87,11 +91,13 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
     expect($html)->toContain(
         'UNIVERSIDAD NACIONAL DE UCAYALI',
         '2027 - PRIMERA CONVOCATORIA',
+        'EXONERACIÓN - CEPREUNU',
         'Padrón de postulantes por aula',
         'isologo-unu.png',
         'PUCALLPA',
         '87654321',
     );
+    expect($html)->not->toContain('EXAMEN CEPREUNU');
     expect($html)->toMatch('/<th class="col-postulante">Apellidos y nombres<\/th>\s*<th class="col-asiento">Asiento<\/th>/');
     expect($html)->toContain(
         'class="col-numero"',

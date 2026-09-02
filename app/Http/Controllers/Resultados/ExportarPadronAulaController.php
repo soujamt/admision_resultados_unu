@@ -16,7 +16,13 @@ class ExportarPadronAulaController extends Controller
     public function __invoke(ExamenAula $aulaExamen): Response
     {
         Gate::authorize(Permiso::ResultadosVer->value);
-        $aulaExamen->load(['examen.proceso', 'area', 'aula.sede', 'asignaciones.inscripcion.postulante']);
+        $aulaExamen->load([
+            'examen.proceso',
+            'area',
+            'aula.sede',
+            'asignaciones.inscripcion.modalidad',
+            'asignaciones.inscripcion.postulante',
+        ]);
         $asignaciones = $aulaExamen->asignaciones
             ->sortBy(
                 fn (AsignacionExamen $asignacion): string => Str::ascii(
@@ -25,8 +31,17 @@ class ExportarPadronAulaController extends Controller
                 SORT_NATURAL,
             )
             ->values();
+        $modalidadCabecera = $asignaciones
+            ->pluck('inscripcion.modalidad.nombre_mod')
+            ->filter()
+            ->unique()
+            ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+            ->implode(' / ');
+        $modalidadCabecera = filled($modalidadCabecera)
+            ? $modalidadCabecera
+            : $aulaExamen->examen->nombre_exa;
         $nombreAula = Str::slug($aulaExamen->aula->nombre_aul);
 
-        return Pdf::loadView('pdf.padron-aula', compact('aulaExamen', 'asignaciones'))->setPaper('a4')->download('padron-aula-'.$nombreAula.'.pdf');
+        return Pdf::loadView('pdf.padron-aula', compact('aulaExamen', 'asignaciones', 'modalidadCabecera'))->setPaper('a4')->download('padron-aula-'.$nombreAula.'.pdf');
     }
 }
