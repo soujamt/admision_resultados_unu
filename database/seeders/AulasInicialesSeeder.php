@@ -13,7 +13,7 @@ use Illuminate\Database\Seeder;
  */
 class AulasInicialesSeeder extends Seeder
 {
-    private const CAPACIDAD = 40;
+    private const CAPACIDAD = 50;
 
     private const AULAS = 15;
 
@@ -44,9 +44,9 @@ class AulasInicialesSeeder extends Seeder
     {
         return collect(range(1, self::AULAS))->map(function (int $numero): array {
             $ubicacion = match (true) {
-                $numero <= 3 => 'PAB I - Piso 1',
-                $numero <= 6 => 'PAB I - Piso 2',
-                $numero <= 9 => 'PAB I - Piso 3',
+                $numero <= 5 => 'PAB I - Piso 1',
+                $numero <= 10 => 'PAB I - Piso 2',
+                $numero <= 15 => 'PAB I - Piso 3',
                 default => 'PAB II - Piso 1',
             };
 
