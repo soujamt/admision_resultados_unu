@@ -10,28 +10,40 @@ use App\Models\Inscripcion;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Throwable;
 
 /**
  * Reparto de las aulas de una jornada entre las areas academicas.
  *
- * El tope de postulantes por aula es su capacidad fisica (`capacidad_aul`) y
- * nada mas: el reglamento no fija un maximo por aula, y el reparto real lo
- * obliga —en 2027-I un aula lleva 42 y otra 24, segun el remanente del area.
+ * Cada aula se asigna a una sola area y admite como maximo 40 postulantes,
+ * siempre que su capacidad fisica tambien lo permita.
  */
 class DistribucionAulasService
 {
+    public const CAPACIDAD_MAXIMA = 40;
+
     /**
      * @param  array{id_aul:int, id_are:int, capacidad_eau:int}  $fila
      */
     public function agregar(Examen $examen, array $fila): ExamenAula
     {
-        $this->validarFila($fila);
+        try {
+            return DB::transaction(function () use ($examen, $fila): ExamenAula {
+                $this->validarFila($fila);
 
-        if ($this->yaAsignada($examen, $fila['id_aul'])) {
-            throw new RuntimeException('Esta aula ya está asignada a la jornada seleccionada.');
+                if ($this->yaAsignada($examen, $fila['id_aul'])) {
+                    throw new RuntimeException('Esta aula ya está asignada a la jornada seleccionada.');
+                }
+
+                return ExamenAula::create($fila + ['id_exa' => $examen->id_exa]);
+            }, 3);
+        } catch (RuntimeException $error) {
+            throw $error;
+        } catch (Throwable $error) {
+            report($error);
+
+            throw new RuntimeException('No se pudo agregar el aula. Inténtalo nuevamente.');
         }
-
-        return ExamenAula::create($fila + ['id_exa' => $examen->id_exa]);
     }
 
     /**
@@ -49,10 +61,16 @@ class DistribucionAulasService
 
     public function retirar(Examen $examen, int $idAulaExamen): bool
     {
-        return ExamenAula::query()
-            ->where('id_exa', $examen->id_exa)
-            ->whereKey($idAulaExamen)
-            ->delete() > 0;
+        try {
+            return DB::transaction(fn (): bool => ExamenAula::query()
+                ->where('id_exa', $examen->id_exa)
+                ->whereKey($idAulaExamen)
+                ->delete() > 0, 3);
+        } catch (Throwable $error) {
+            report($error);
+
+            throw new RuntimeException('No se pudo retirar el aula. Inténtalo nuevamente.');
+        }
     }
 
     /**
@@ -71,13 +89,19 @@ class DistribucionAulasService
             $this->validarFila($fila);
         }
 
-        DB::transaction(function () use ($examen, $filas): void {
-            ExamenAula::where('id_exa', $examen->id_exa)->delete();
-            ExamenAula::insert(array_map(
-                fn (array $fila): array => $fila + ['id_exa' => $examen->id_exa, 'created_at' => now(), 'updated_at' => now()],
-                $filas,
-            ));
-        });
+        try {
+            DB::transaction(function () use ($examen, $filas): void {
+                ExamenAula::where('id_exa', $examen->id_exa)->delete();
+                ExamenAula::insert(array_map(
+                    fn (array $fila): array => $fila + ['id_exa' => $examen->id_exa, 'created_at' => now(), 'updated_at' => now()],
+                    $filas,
+                ));
+            }, 3);
+        } catch (Throwable $error) {
+            report($error);
+
+            throw new RuntimeException('No se pudo guardar la distribución de aulas. Inténtalo nuevamente.');
+        }
     }
 
     /**
@@ -90,9 +114,11 @@ class DistribucionAulasService
             throw new RuntimeException('Una de las aulas seleccionadas no existe.');
         }
 
-        if ($fila['capacidad_eau'] < 1 || $fila['capacidad_eau'] > $aula->capacidad_aul) {
+        $capacidadPermitida = min(self::CAPACIDAD_MAXIMA, $aula->capacidad_aul);
+
+        if ($fila['capacidad_eau'] < 1 || $fila['capacidad_eau'] > $capacidadPermitida) {
             throw new RuntimeException(
-                "El aula «{$aula->etiqueta()}» tiene {$aula->capacidad_aul} carpetas: ".
+                "El aula «{$aula->etiqueta()}» permite hasta {$capacidadPermitida} postulantes: ".
                 "no se le pueden asignar {$fila['capacidad_eau']} postulantes."
             );
         }
@@ -144,18 +170,23 @@ class DistribucionAulasService
     }
 
     /**
-     * Explica en una frase por que no se puede sortear todavia, nombrando las
-     * areas que estan descuadradas y cuantos cupos les sobran o faltan.
+     * Explica por que no se puede sortear, reutilizando los totales y areas que
+     * la pantalla ya consulto para no repetir esas operaciones.
+     *
+     * @param  Collection<int, array{id_are:int, inscritos:int, capacidad:int, diferencia:int}>|null  $totales
+     * @param  Collection<int, Area>|null  $areas
      */
-    public function motivoParaNoSortear(Examen $examen): ?string
+    public function motivoParaNoSortear(Examen $examen, ?Collection $totales = null, ?Collection $areas = null): ?string
     {
-        $incompletas = $this->areasIncompletas($examen);
+        $incompletas = ($totales ?? $this->totalesPorArea($examen))
+            ->filter(fn (array $total): bool => $total['diferencia'] !== 0)
+            ->values();
 
         if ($incompletas->isEmpty()) {
             return null;
         }
 
-        $areas = Area::query()
+        $areas ??= Area::query()
             ->whereIn('id_are', $incompletas->pluck('id_are'))
             ->get()
             ->keyBy('id_are');

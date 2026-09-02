@@ -8,6 +8,7 @@ use App\Models\Aula;
 use App\Models\Examen;
 use App\Models\Proceso;
 use App\Services\Admision\DistribucionAulasService;
+use App\Services\Admision\ExamenService;
 use App\Services\Admision\SorteadorAulasService;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -62,39 +63,10 @@ class extends Component
         $this->resetValidation();
     }
 
-    /**
-     * Un error de validacion se borra en cuanto se corrige el campo que lo
-     * provoco. Sin esto el mensaje sobrevive al arreglo: el usuario elige el
-     * aula que le faltaba y sigue viendo «Elige el aula que se va a usar» en
-     * rojo sobre un campo que ya esta lleno.
-     */
     public function updated(string $propiedad): void
     {
         if (str_starts_with($propiedad, 'formAula.')) {
             $this->resetValidation($propiedad);
-        }
-    }
-
-    /**
-     * Al elegir un aula se propone su capacidad como cantidad de postulantes,
-     * pero solo si el campo esta vacio o si lo que hay escrito ya no cabe: si
-     * el usuario tecleo 33 a proposito, cambiar de aula no se lo puede pisar.
-     */
-    public function updatedFormAulaAula(): void
-    {
-        $this->formAula->olvidarAula();
-
-        $maximo = $this->formAula->capacidadMaxima();
-
-        if ($maximo === null) {
-            $this->formAula->capacidad = null;
-
-            return;
-        }
-
-        if ($this->formAula->capacidad === null || $this->formAula->capacidad > $maximo) {
-            $this->formAula->capacidad = $maximo;
-            $this->resetValidation('formAula.capacidad');
         }
     }
 
@@ -108,11 +80,13 @@ class extends Component
         Flux::modal('examen')->show();
     }
 
-    public function crearExamen(): void
+    public function crearExamen(ExamenService $servicio): void
     {
         $this->authorize(Permiso::ResultadosConfigurarAulas->value);
 
-        if ($this->procesoSeleccionado === '' || ! Proceso::whereKey($this->procesoSeleccionado)->exists()) {
+        $proceso = $this->procesoSeleccionado === '' ? null : Proceso::find($this->procesoSeleccionado);
+
+        if ($proceso === null) {
             $this->addError('procesoSeleccionado', 'Elige un proceso válido.');
 
             return;
@@ -120,11 +94,13 @@ class extends Component
 
         $this->formExamen->validate();
 
-        $examen = Examen::create([
-            'id_pro' => (int) $this->procesoSeleccionado,
-            'nombre_exa' => trim($this->formExamen->nombre),
-            'fecha_exa' => blank($this->formExamen->fecha) ? null : $this->formExamen->fecha,
-        ]);
+        try {
+            $examen = $servicio->crear($proceso, $this->formExamen->datos());
+        } catch (RuntimeException $error) {
+            $this->addError('formExamen.nombre', $error->getMessage());
+
+            return;
+        }
 
         $this->examenSeleccionado = (string) $examen->id_exa;
         $this->olvidarExamen();
@@ -146,7 +122,6 @@ class extends Component
             return;
         }
 
-        $this->formAula->olvidarAula();
         $this->formAula->validate();
 
         /*
@@ -183,7 +158,13 @@ class extends Component
             return;
         }
 
-        if (! $servicio->retirar($examen, $id)) {
+        try {
+            if (! $servicio->retirar($examen, $id)) {
+                return;
+            }
+        } catch (RuntimeException $error) {
+            Flux::toast(text: $error->getMessage(), variant: 'danger', duration: 8000);
+
             return;
         }
 
@@ -238,39 +219,58 @@ class extends Component
     public function with(DistribucionAulasService $servicio): array
     {
         $examen = $this->examen();
-
-        $distribucion = $examen === null
-            ? collect()
-            : $examen->aulas()->with(['aula.sede', 'area'])->orderBy('id_eau')->get();
-
-        $aulasDisponibles = Aula::query()
-            ->habilitado()
-            ->whereNotIn('id_aul', $distribucion->pluck('id_aul'))
-            ->with('sede')
-            ->ordenadas()
+        $procesos = Proceso::query()
+            ->select(['id_pro', 'codigo_pro', 'anio_pro', 'convocatoria_pro'])
+            ->orderByDesc('anio_pro')
+            ->orderByDesc('convocatoria_pro')
             ->get();
+        $examenes = $this->procesoSeleccionado === ''
+            ? collect()
+            : Examen::query()
+                ->select(['id_exa', 'id_pro', 'nombre_exa', 'fecha_exa'])
+                ->where('id_pro', $this->procesoSeleccionado)
+                ->orderBy('fecha_exa')
+                ->orderBy('id_exa')
+                ->get();
+
+        if ($examen === null) {
+            return [
+                'procesos' => $procesos,
+                'examenes' => $examenes,
+                'examen' => null,
+                'aulas' => collect(),
+                'aulasAsignadas' => [],
+                'areas' => collect(),
+                'areasPorId' => collect(),
+                'distribucion' => collect(),
+                'totales' => collect(),
+                'motivoParaNoSortear' => null,
+            ];
+        }
+
+        $distribucion = $examen->aulas()
+            ->with(['aula.sede', 'area'])
+            ->orderBy('id_eau')
+            ->get();
+        $aulas = Aula::query()->habilitado()->with('sede')->ordenadas()->get();
+        $aulasAsignadas = array_fill_keys($distribucion->pluck('id_aul')->all(), true);
+        $areasPorId = Area::query()->orderBy('numero_are')->get()->keyBy('id_are');
+        $areas = $areasPorId
+            ->filter(fn (Area $area): bool => $area->estaHabilitado())
+            ->values();
+        $totales = $servicio->totalesPorArea($examen);
 
         return [
-            'procesos' => Proceso::query()->orderByDesc('anio_pro')->orderByDesc('convocatoria_pro')->get(),
-            'examenes' => $this->procesoSeleccionado === ''
-                ? collect()
-                : Examen::query()->where('id_pro', $this->procesoSeleccionado)->orderBy('fecha_exa')->get(),
+            'procesos' => $procesos,
+            'examenes' => $examenes,
             'examen' => $examen,
-            'aulas' => $aulasDisponibles,
-            /*
-             * El desplegable se reconstruye cuando cambia el juego de aulas
-             * disponibles. Sin esta clave Livewire reutiliza el mismo <select>
-             * y el navegador conserva la posicion elegida, que tras agregar un
-             * aula ya apunta a otra: se ve una seleccionada y el servidor
-             * recibe vacio.
-             */
-            'claveAulas' => md5($aulasDisponibles->pluck('id_aul')->join(',')),
-            'areas' => Area::query()->habilitado()->orderBy('numero_are')->get(),
-            'areasPorId' => Area::query()->get()->keyBy('id_are'),
+            'aulas' => $aulas,
+            'aulasAsignadas' => $aulasAsignadas,
+            'areas' => $areas,
+            'areasPorId' => $areasPorId,
             'distribucion' => $distribucion,
-            'totales' => $examen === null ? collect() : $servicio->totalesPorArea($examen),
-            'motivoParaNoSortear' => $examen === null ? null : $servicio->motivoParaNoSortear($examen),
-            'capacidadMaxima' => $this->formAula->capacidadMaxima(),
+            'totales' => $totales,
+            'motivoParaNoSortear' => $servicio->motivoParaNoSortear($examen, $totales, $areasPorId),
         ];
     }
 };

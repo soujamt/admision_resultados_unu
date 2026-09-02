@@ -54,10 +54,10 @@ it('deja el formulario vacío después de agregar, para que el aula anterior no 
         ->call('agregarAula')
         ->assertSet('formAula.aula', null)
         ->assertSet('formAula.area', null)
-        ->assertSet('formAula.capacidad', null);
+        ->assertSet('formAula.capacidad', 40);
 });
 
-it('rehace el desplegable cuando cambia el juego de aulas disponibles', function () {
+it('mantiene las aulas en el desplegable y marca las asignadas', function () {
     ['examen' => $examen, 'aula' => $aula, 'area' => $area, 'usuario' => $usuario] = jornadaConAula();
     Aula::factory()->create();
 
@@ -65,44 +65,38 @@ it('rehace el desplegable cuando cambia el juego de aulas disponibles', function
         ->test('pages::resultados.aulas')
         ->set('examenSeleccionado', (string) $examen->id_exa);
 
-    $claveInicial = $componente->viewData('claveAulas');
-
-    /* La clave tiene que llegar al HTML: es lo que obliga a Livewire a rehacer
-       el elemento en vez de reutilizarlo con la selección del navegador. */
-    $componente->assertSeeHtml('wire:key="aula-disponible-'.$claveInicial.'"');
-
     $componente->set('formAula.aula', $aula->id_aul)
         ->set('formAula.area', $area->id_are)
         ->set('formAula.capacidad', 24)
         ->call('agregarAula');
 
-    expect($componente->viewData('claveAulas'))->not->toBe($claveInicial);
+    expect($componente->viewData('aulas')->pluck('id_aul'))->toContain($aula->id_aul)
+        ->and($componente->viewData('aulasAsignadas'))->toHaveKey($aula->id_aul);
 });
 
-it('propone la capacidad real del aula al elegirla', function () {
+it('propone cuarenta como capacidad inicial', function () {
     ['examen' => $examen, 'aula' => $aula, 'usuario' => $usuario] = jornadaConAula(capacidadAula: 24);
 
     Livewire::actingAs($usuario)
         ->test('pages::resultados.aulas')
         ->set('examenSeleccionado', (string) $examen->id_exa)
         ->set('formAula.aula', $aula->id_aul)
-        ->assertSet('formAula.capacidad', 24);
+        ->assertSet('formAula.capacidad', 40);
 });
 
-it('deja pasar de cuarenta cuando el aula tiene carpetas de sobra', function () {
+it('rechaza mas de cuarenta aunque el aula tenga carpetas de sobra', function () {
     ['examen' => $examen, 'aula' => $aula, 'area' => $area, 'usuario' => $usuario] = jornadaConAula(capacidadAula: 50);
 
     Livewire::actingAs($usuario)
         ->test('pages::resultados.aulas')
         ->set('examenSeleccionado', (string) $examen->id_exa)
         ->set('formAula.aula', $aula->id_aul)
-        ->assertSet('formAula.capacidad', 50)
         ->set('formAula.area', $area->id_are)
         ->set('formAula.capacidad', 42)
         ->call('agregarAula')
-        ->assertHasNoErrors();
+        ->assertHasErrors(['formAula.capacidad' => 'max']);
 
-    expect(ExamenAula::where('id_exa', $examen->id_exa)->value('capacidad_eau'))->toBe(42);
+    expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(0);
 });
 
 it('señala el campo de postulantes cuando se pide más de lo que cabe en el aula', function () {
@@ -115,7 +109,7 @@ it('señala el campo de postulantes cuando se pide más de lo que cabe en el aul
         ->set('formAula.area', $area->id_are)
         ->set('formAula.capacidad', 40)
         ->call('agregarAula')
-        ->assertHasErrors(['formAula.capacidad' => 'max'])
+        ->assertHasErrors('formAula.capacidad')
         ->assertHasNoErrors('formAula.aula');
 
     expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(0);
@@ -143,7 +137,7 @@ it('señala el campo del aula cuando ya está en la distribución', function () 
     expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(1);
 });
 
-it('esconde del desplegable las aulas que ya están asignadas', function () {
+it('deshabilita en el desplegable las aulas que ya están asignadas', function () {
     ['examen' => $examen, 'aula' => $aula, 'area' => $area, 'usuario' => $usuario] = jornadaConAula();
 
     ExamenAula::create([
@@ -157,7 +151,8 @@ it('esconde del desplegable las aulas que ya están asignadas', function () {
         ->test('pages::resultados.aulas')
         ->set('examenSeleccionado', (string) $examen->id_exa);
 
-    expect($componente->viewData('aulas')->pluck('id_aul'))->not->toContain($aula->id_aul);
+    expect($componente->viewData('aulas')->pluck('id_aul'))->toContain($aula->id_aul)
+        ->and($componente->viewData('aulasAsignadas'))->toHaveKey($aula->id_aul);
 });
 
 it('limpia el formulario al retirar un aula, porque vuelve al desplegable', function () {
@@ -317,7 +312,7 @@ it('respeta la cantidad que el usuario escribió antes de elegir el aula', funct
         ->assertSet('formAula.capacidad', 33);
 });
 
-it('recorta la cantidad escrita cuando no cabe en el aula elegida', function () {
+it('rechaza la cantidad cuando no cabe en el aula elegida', function () {
     ['examen' => $examen, 'aula' => $aula, 'usuario' => $usuario] = jornadaConAula(capacidadAula: 24);
 
     Livewire::actingAs($usuario)
@@ -325,5 +320,7 @@ it('recorta la cantidad escrita cuando no cabe en el aula elegida', function () 
         ->set('examenSeleccionado', (string) $examen->id_exa)
         ->set('formAula.capacidad', 40)
         ->set('formAula.aula', $aula->id_aul)
-        ->assertSet('formAula.capacidad', 24);
+        ->set('formAula.area', Area::factory()->create()->id_are)
+        ->call('agregarAula')
+        ->assertHasErrors('formAula.capacidad');
 });

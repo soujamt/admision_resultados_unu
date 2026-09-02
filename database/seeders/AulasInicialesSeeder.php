@@ -8,22 +8,14 @@ use App\Models\Sede;
 use Illuminate\Database\Seeder;
 
 /**
- * Aulas del pabellon I de la sede Coronel Portillo, que son las que se usan
- * para el examen.
- *
- * `capacidad_aul` es cuantas carpetas tiene el aula, no cuantos postulantes se
- * le van a poner en una jornada: eso ultimo sale del reparto por area y cambia
- * en cada examen (en 2027-I van desde 24 hasta 42 en la misma aula de 50).
+ * Quince aulas iniciales de la sede Coronel Portillo para las jornadas de
+ * examen, con el maximo operativo de cuarenta postulantes definido por admision.
  */
 class AulasInicialesSeeder extends Seeder
 {
-    /** Carpetas por aula en el pabellon I. */
-    private const CAPACIDAD = 50;
+    private const CAPACIDAD = 40;
 
-    /** Cuantas aulas tiene cada piso, en orden. */
-    private const AULAS_POR_PISO = 5;
-
-    private const AULAS = 10;
+    private const AULAS = 15;
 
     public function run(): void
     {
@@ -51,12 +43,17 @@ class AulasInicialesSeeder extends Seeder
     private function aulas(): array
     {
         return collect(range(1, self::AULAS))->map(function (int $numero): array {
-            $piso = (int) ceil($numero / self::AULAS_POR_PISO);
+            $ubicacion = match (true) {
+                $numero <= 3 => 'PAB I - Piso 1',
+                $numero <= 6 => 'PAB I - Piso 2',
+                $numero <= 9 => 'PAB I - Piso 3',
+                default => 'PAB II - Piso 1',
+            };
 
             return [
                 'codigo_aul' => 'A-'.str_pad((string) $numero, 3, '0', STR_PAD_LEFT),
                 'nombre_aul' => 'Aula '.$numero,
-                'pabellon_aul' => "PAB I - Piso {$piso}",
+                'pabellon_aul' => $ubicacion,
                 'capacidad_aul' => self::CAPACIDAD,
                 'orden_aul' => $numero,
             ];

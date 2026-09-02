@@ -18,4 +18,13 @@ class ExamenForm extends Form
             'fecha' => ['nullable', 'date'],
         ];
     }
+
+    /** @return array{nombre:string, fecha:?string} */
+    public function datos(): array
+    {
+        return [
+            'nombre' => trim($this->nombre),
+            'fecha' => blank($this->fecha) ? null : $this->fecha,
+        ];
+    }
 }

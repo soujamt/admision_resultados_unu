@@ -21,20 +21,14 @@ it('no permite asignar mas postulantes que carpetas tiene el aula', function () 
     ]]))->toThrow(RuntimeException::class);
 });
 
-/*
- * El reglamento no fija un maximo por aula: el reparto real de 2027-I pone 42
- * postulantes en un aula de 50 carpetas porque es el remanente de su area.
- */
-it('permite pasar de cuarenta cuando el aula tiene carpetas de sobra', function () {
+it('mantiene el maximo de cuarenta aunque el aula tenga mas carpetas', function () {
     $examen = Examen::factory()->create();
 
-    app(DistribucionAulasService::class)->guardar($examen, [[
+    expect(fn () => app(DistribucionAulasService::class)->guardar($examen, [[
         'id_aul' => Aula::factory()->create(['capacidad_aul' => 50])->id_aul,
         'id_are' => Area::factory()->create()->id_are,
         'capacidad_eau' => 42,
-    ]]);
-
-    expect(ExamenAula::where('id_exa', $examen->id_exa)->value('capacidad_eau'))->toBe(42);
+    ]]))->toThrow(RuntimeException::class);
 });
 
 it('no permite repetir un aula en dos áreas', function () {
@@ -91,9 +85,8 @@ it('compara la capacidad de cada area con los inscritos del proceso', function (
 });
 
 /*
- * El reparto real de 2027-I: 379 inscritos en diez aulas de cincuenta
- * carpetas. Los numeros por aula son los remanentes de cada area, no el tamano
- * del aula, y por eso van de 24 a 42.
+ * El reparto de 2027-I: 379 inscritos, un area por aula y no mas de cuarenta
+ * postulantes en cada una.
  */
 it('acepta el reparto completo de 2027-I y lo da por cuadrado', function () {
     $examen = Examen::factory()->create();
@@ -102,7 +95,7 @@ it('acepta el reparto completo de 2027-I y lo da por cuadrado', function () {
         1 => [24],
         2 => [40, 40, 33],
         3 => [40],
-        4 => [42],
+        4 => [22, 20],
         5 => [40, 40, 40, 40],
     ];
 
@@ -119,7 +112,7 @@ it('acepta el reparto completo de 2027-I y lo da por cuadrado', function () {
 
         foreach ($capacidades as $capacidad) {
             $filas[] = [
-                'id_aul' => Aula::factory()->create(['capacidad_aul' => 50])->id_aul,
+                'id_aul' => Aula::factory()->create(['capacidad_aul' => 40])->id_aul,
                 'id_are' => $area->id_are,
                 'capacidad_eau' => $capacidad,
             ];
@@ -129,7 +122,7 @@ it('acepta el reparto completo de 2027-I y lo da por cuadrado', function () {
     $servicio = app(DistribucionAulasService::class);
     $servicio->guardar($examen, $filas);
 
-    expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(10)
+    expect(ExamenAula::where('id_exa', $examen->id_exa)->count())->toBe(11)
         ->and(ExamenAula::where('id_exa', $examen->id_exa)->sum('capacidad_eau'))->toBe(379)
         ->and($servicio->distribucionEstaCompleta($examen))->toBeTrue()
         ->and($servicio->motivoParaNoSortear($examen))->toBeNull();

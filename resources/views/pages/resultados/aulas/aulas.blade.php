@@ -12,7 +12,8 @@
 
     <flux:callout icon="information-circle" variant="secondary">
         <flux:callout.text>
-            Un aula pertenece a una sola área en una jornada y admite hasta las carpetas que tenga.
+            Un aula pertenece a una sola área en una jornada y admite como máximo 40 postulantes,
+            sin superar su capacidad física.
             La suma de capacidades debe coincidir exactamente con los inscritos de cada área.
         </flux:callout.text>
     </flux:callout>
@@ -93,49 +94,58 @@
                 --}}
                 <form wire:submit="agregarAula" class="space-y-4">
                     <div class="grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {{--
-                            La clave cambia con el juego de aulas disponibles para
-                            que Livewire rehaga el <select> en vez de reutilizarlo:
-                            si lo reutiliza, el navegador conserva la posicion
-                            elegida y tras agregar un aula esa posicion ya apunta a
-                            otra distinta.
-                        --}}
                         <flux:select
-                            wire:model.live="formAula.aula"
-                            wire:key="aula-disponible-{{ $claveAulas }}"
+                            wire:model="formAula.aula"
+                            wire:key="aulas-jornada-{{ $examen->id_exa }}"
                             label="Aula"
                             placeholder="Elige un aula"
                         >
                             @foreach ($aulas as $aula)
-                                <flux:select.option :value="$aula->id_aul">
+                                <flux:select.option
+                                    :value="$aula->id_aul"
+                                    :disabled="isset($aulasAsignadas[$aula->id_aul])"
+                                >
                                     {{ $aula->etiqueta() }} · {{ $aula->sede->nombre_sed }}
-                                    ({{ $aula->capacidad_aul }} carpetas)
+                                    @if (isset($aulasAsignadas[$aula->id_aul]))
+                                        (ya asignada)
+                                    @else
+                                        (máximo {{ min(40, $aula->capacidad_aul) }})
+                                    @endif
                                 </flux:select.option>
                             @endforeach
                         </flux:select>
 
-                        <flux:select wire:model.live="formAula.area" label="Área" placeholder="Elige un área">
+                        <flux:select wire:model="formAula.area" label="Área" placeholder="Elige un área">
                             @foreach ($areas as $area)
                                 <flux:select.option :value="$area->id_are">{{ $area->etiqueta() }}</flux:select.option>
                             @endforeach
                         </flux:select>
 
                         <flux:input
-                            wire:model.blur="formAula.capacidad"
+                            wire:model="formAula.capacidad"
                             type="number"
                             min="1"
-                            :max="$capacidadMaxima"
+                            max="40"
                             label="Postulantes"
-                            :placeholder="$capacidadMaxima === null ? 'Elige primero el aula' : 'Hasta '.$capacidadMaxima"
+                            placeholder="Hasta 40"
                         />
                     </div>
 
                     <div class="flex justify-end">
-                        <flux:button type="submit" variant="primary" icon="plus">Agregar aula</flux:button>
+                        <flux:button
+                            type="submit"
+                            variant="primary"
+                            icon="plus"
+                            wire:loading.attr="disabled"
+                            wire:target="agregarAula"
+                        >
+                            <span wire:loading.remove wire:target="agregarAula">Agregar aula</span>
+                            <span wire:loading wire:target="agregarAula">Agregando…</span>
+                        </flux:button>
                     </div>
                 </form>
 
-                @if ($aulas->isEmpty())
+                @if (count($aulasAsignadas) === $aulas->count())
                     <flux:text size="sm" class="mt-3 text-amber-600 dark:text-amber-400">
                         Ya no quedan aulas habilitadas sin asignar. Registra más en Configuración › Aulas
                         o retira alguna de la lista.
