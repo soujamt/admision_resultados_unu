@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -138,6 +139,14 @@ class Inscripcion extends Model
     public function paisColegio(): BelongsTo
     {
         return $this->belongsTo(Pais::class, 'id_pai', 'id_pai');
+    }
+
+    /**
+     * @return HasMany<AsignacionExamen, $this>
+     */
+    public function asignacionesExamen(): HasMany
+    {
+        return $this->hasMany(AsignacionExamen::class, 'id_ins', 'id_ins');
     }
 
     /**

@@ -34,11 +34,6 @@ class ExamenPostulante extends Model
         return $this->hasOne(ExamenRespuesta::class, 'id_exp', 'id_exp');
     }
 
-    public function asignacion(): HasOne
-    {
-        return $this->hasOne(AsignacionExamen::class, 'id_exp', 'id_exp');
-    }
-
     public function resultado(): HasOne
     {
         return $this->hasOne(Resultado::class, 'id_exp', 'id_exp');

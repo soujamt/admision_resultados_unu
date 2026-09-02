@@ -2,6 +2,7 @@
 
 use App\Enums\Permiso;
 use App\Models\Area;
+use App\Models\AsignacionExamen;
 use App\Models\Aula;
 use App\Models\Carrera;
 use App\Models\Examen;
@@ -251,6 +252,28 @@ it('explica qué área está descuadrada en vez de dejar sortear', function () {
         ->test('pages::resultados.aulas')
         ->set('examenSeleccionado', (string) $examen->id_exa)
         ->assertSee('faltan 6 cupos');
+});
+
+it('sortea desde la pantalla antes de importar el padrón TXT', function () {
+    ['examen' => $examen, 'aula' => $aula, 'area' => $area, 'usuario' => $usuario] = jornadaConAula(capacidadAula: 3);
+    $carrera = Carrera::factory()->create(['id_are' => $area->id_are]);
+    Inscripcion::factory()->count(3)->create([
+        'id_pro' => $examen->id_pro,
+        'id_car' => $carrera->id_car,
+    ]);
+    ExamenAula::create([
+        'id_exa' => $examen->id_exa,
+        'id_aul' => $aula->id_aul,
+        'id_are' => $area->id_are,
+        'capacidad_eau' => 3,
+    ]);
+
+    Livewire::actingAs($usuario)
+        ->test('pages::resultados.aulas')
+        ->set('examenSeleccionado', (string) $examen->id_exa)
+        ->call('sortear');
+
+    expect(AsignacionExamen::query()->count())->toBe(3);
 });
 
 it('pide elegir una jornada antes de agregar aulas', function () {

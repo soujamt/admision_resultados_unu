@@ -4,7 +4,7 @@ namespace App\Services\Admision;
 
 use App\Models\AsignacionExamen;
 use App\Models\Examen;
-use App\Models\ExamenPostulante;
+use App\Models\Inscripcion;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -23,17 +23,19 @@ class SorteadorAulasService
             throw new RuntimeException($motivo);
         }
 
-        $postulantes = ExamenPostulante::query()
-            ->where('id_exa', $examen->id_exa)
-            ->with('inscripcion.postulante', 'inscripcion.carrera')
+        $postulantes = Inscripcion::query()
+            ->where('id_pro', $examen->id_pro)
+            ->with('postulante', 'carrera')
             ->get();
 
-        if ($postulantes->contains(fn (ExamenPostulante $postulante): bool => $postulante->inscripcion === null)) {
-            throw new RuntimeException('El padrón contiene postulantes que no se pudieron vincular a una inscripción.');
+        if ($postulantes->contains(
+            fn (Inscripcion $inscripcion): bool => $inscripcion->postulante === null || $inscripcion->carrera === null,
+        )) {
+            throw new RuntimeException('Hay inscripciones sin postulante o carrera y no se pueden sortear.');
         }
 
         $porArea = $postulantes->groupBy(
-            fn (ExamenPostulante $postulante): int => $postulante->inscripcion->carrera->id_are,
+            fn (Inscripcion $inscripcion): int => $inscripcion->carrera->id_are,
         );
         $aulasPorArea = $examen->aulas()->orderBy('id_eau')->get()->groupBy('id_are');
         $asignaciones = [];
@@ -52,7 +54,7 @@ class SorteadorAulasService
                     }
 
                     $asignaciones[] = [
-                        'id_exp' => $postulante->id_exp,
+                        'id_ins' => $postulante->id_ins,
                         'id_eau' => $aula->id_eau,
                         'asiento_ase' => $asiento,
                         'created_at' => $ahora,
@@ -94,16 +96,16 @@ class SorteadorAulasService
      * de prioridad el costo es O(n log k) sobre k apellidos distintos, en vez de
      * reordenar todos los grupos en cada una de las n vueltas.
      *
-     * @param  Collection<int, ExamenPostulante>  $postulantes
-     * @return Collection<int, ExamenPostulante>
+     * @param  Collection<int, Inscripcion>  $postulantes
+     * @return Collection<int, Inscripcion>
      */
     private function intercalarApellidos(Collection $postulantes): Collection
     {
-        /** @var SplPriorityQueue<array{int, int}, array{string, list<ExamenPostulante>}> $cola */
+        /** @var SplPriorityQueue<array{int, int}, array{string, list<Inscripcion>}> $cola */
         $cola = new SplPriorityQueue;
         $cola->setExtractFlags(SplPriorityQueue::EXTR_DATA);
 
-        $grupos = $postulantes->shuffle()->groupBy(fn (ExamenPostulante $p): string => $this->apellido($p));
+        $grupos = $postulantes->shuffle()->groupBy(fn (Inscripcion $inscripcion): string => $this->apellido($inscripcion));
 
         foreach ($grupos as $apellido => $miembros) {
             /*
@@ -145,8 +147,8 @@ class SorteadorAulasService
         return collect($ordenados);
     }
 
-    private function apellido(ExamenPostulante $postulante): string
+    private function apellido(Inscripcion $inscripcion): string
     {
-        return mb_strtoupper($postulante->inscripcion->postulante->primer_apellido_pos);
+        return mb_strtoupper($inscripcion->postulante->primer_apellido_pos);
     }
 }

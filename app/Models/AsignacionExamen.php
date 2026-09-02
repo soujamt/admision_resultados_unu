@@ -16,11 +16,11 @@ class AsignacionExamen extends Model
 
     protected $primaryKey = 'id_ase';
 
-    protected $fillable = ['id_exp', 'id_eau', 'asiento_ase'];
+    protected $fillable = ['id_ins', 'id_eau', 'asiento_ase'];
 
-    public function postulante(): BelongsTo
+    public function inscripcion(): BelongsTo
     {
-        return $this->belongsTo(ExamenPostulante::class, 'id_exp', 'id_exp');
+        return $this->belongsTo(Inscripcion::class, 'id_ins', 'id_ins');
     }
 
     public function aulaExamen(): BelongsTo

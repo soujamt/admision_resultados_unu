@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Models\AsignacionExamen;
 use App\Models\ExamenAula;
-use App\Models\ExamenPostulante;
+use App\Models\Inscripcion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +22,7 @@ class AsignacionExamenFactory extends Factory
     public function definition(): array
     {
         return [
-            'id_exp' => ExamenPostulante::factory(),
+            'id_ins' => Inscripcion::factory(),
             'id_eau' => ExamenAula::factory(),
             'asiento_ase' => fake()->numberBetween(1, 40),
         ];

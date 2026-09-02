@@ -11,19 +11,11 @@ use App\Models\Postulante;
 use App\Services\Admision\DistribucionAulasService;
 use App\Services\Admision\SorteadorAulasService;
 
-it('asigna todos los postulantes a una sola area y numera sus asientos', function () {
+it('sortea las inscripciones antes de importar el padrón TXT y numera sus asientos', function () {
     $examen = Examen::factory()->create();
     $area = Area::factory()->create();
     $carrera = Carrera::factory()->create(['id_are' => $area->id_are]);
     $inscripciones = Inscripcion::factory()->count(3)->create(['id_pro' => $examen->id_pro, 'id_car' => $carrera->id_car]);
-
-    foreach ($inscripciones as $indice => $inscripcion) {
-        ExamenPostulante::factory()->create([
-            'id_exa' => $examen->id_exa,
-            'id_ins' => $inscripcion->id_ins,
-            'codigo_cartilla_exp' => 'CARTILLA-'.($indice + 1),
-        ]);
-    }
 
     app(DistribucionAulasService::class)->guardar($examen, [[
         'id_aul' => Aula::factory()->create()->id_aul,
@@ -32,7 +24,10 @@ it('asigna todos los postulantes a una sola area y numera sus asientos', functio
     ]]);
 
     expect(app(SorteadorAulasService::class)->sortear($examen, app(DistribucionAulasService::class)))->toBe(3)
+        ->and(ExamenPostulante::query()->count())->toBe(0)
         ->and(AsignacionExamen::query()->count())->toBe(3)
+        ->and(AsignacionExamen::query()->pluck('id_ins')->sort()->values()->all())
+        ->toBe($inscripciones->pluck('id_ins')->sort()->values()->all())
         ->and(AsignacionExamen::query()->pluck('asiento_ase')->sort()->values()->all())->toBe([1, 2, 3]);
 });
 
@@ -47,15 +42,10 @@ it('separa a los postulantes que comparten primer apellido', function () {
      */
     foreach (['QUISPE', 'MAMANI', 'FLORES', 'RAMOS'] as $apellido) {
         foreach (range(1, 3) as $numero) {
-            $inscripcion = Inscripcion::factory()->create([
+            Inscripcion::factory()->create([
                 'id_pro' => $examen->id_pro,
                 'id_car' => $carrera->id_car,
                 'id_pos' => Postulante::factory()->create(['primer_apellido_pos' => $apellido]),
-            ]);
-
-            ExamenPostulante::factory()->create([
-                'id_exa' => $examen->id_exa,
-                'id_ins' => $inscripcion->id_ins,
             ]);
         }
     }
@@ -69,10 +59,10 @@ it('separa a los postulantes que comparten primer apellido', function () {
     app(SorteadorAulasService::class)->sortear($examen, app(DistribucionAulasService::class));
 
     $apellidos = AsignacionExamen::query()
-        ->with('postulante.inscripcion.postulante')
+        ->with('inscripcion.postulante')
         ->orderBy('asiento_ase')
         ->get()
-        ->map(fn (AsignacionExamen $fila): string => $fila->postulante->inscripcion->postulante->primer_apellido_pos)
+        ->map(fn (AsignacionExamen $fila): string => $fila->inscripcion->postulante->primer_apellido_pos)
         ->all();
 
     $contiguos = collect($apellidos)->sliding(2)->filter(
@@ -90,15 +80,10 @@ it('deja al final a los del apellido que no se puede separar', function () {
 
     /* Cuatro de cinco comparten apellido: repetir es inevitable. */
     foreach (['SILVA', 'SILVA', 'SILVA', 'SILVA', 'VEGA'] as $apellido) {
-        $inscripcion = Inscripcion::factory()->create([
+        Inscripcion::factory()->create([
             'id_pro' => $examen->id_pro,
             'id_car' => $carrera->id_car,
             'id_pos' => Postulante::factory()->create(['primer_apellido_pos' => $apellido]),
-        ]);
-
-        ExamenPostulante::factory()->create([
-            'id_exa' => $examen->id_exa,
-            'id_ins' => $inscripcion->id_ins,
         ]);
     }
 
