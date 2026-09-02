@@ -72,4 +72,17 @@ class Sede extends Model
             default => $this->codigo_sed,
         };
     }
+
+    /**
+     * Ciudad que se imprime en la cabecera de los documentos oficiales.
+     */
+    public function ubicacionCabecera(): string
+    {
+        return match ($this->codigo_sed) {
+            'CORONEL_PORTILLO' => 'PUCALLPA',
+            'AGUAYTIA' => 'AGUAYTÍA',
+            'ATALAYA' => 'ATALAYA',
+            default => mb_strtoupper($this->nombre_sed),
+        };
+    }
 }

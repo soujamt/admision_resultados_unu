@@ -125,6 +125,14 @@ class Proceso extends Model
     }
 
     /**
+     * Título institucional usado en padrones y resultados oficiales.
+     */
+    public function tituloConvocatoria(): string
+    {
+        return $this->anio_pro.' - '.mb_strtoupper($this->convocatoria_pro->etiqueta());
+    }
+
+    /**
      * Carpeta del disco privado donde viven los archivos del proceso.
      */
     public function carpeta(): string
