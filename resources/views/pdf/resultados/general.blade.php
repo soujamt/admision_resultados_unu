@@ -15,7 +15,7 @@
             table.listado { border-collapse: collapse; table-layout: fixed; width: 100%; }
             .listado thead { display: table-header-group; }
             .listado th { border-bottom: 1px solid #222; border-top: 1px solid #222; font-size: 6.8px; font-weight: normal; line-height: 1.1; padding: 4px 2px; text-align: center; text-transform: uppercase; }
-            .listado td { border-bottom: .35px solid #aaa; font-size: 6.8px; line-height: 1.1; padding: 2px; vertical-align: middle; }
+            .listado td { font-size: 6.8px; line-height: 1.1; padding: 2px; vertical-align: middle; }
             .numero { text-align: center; width: 4%; }
             .orden { text-align: center; width: 8%; }
             .documento { text-align: center; width: 10%; }
