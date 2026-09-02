@@ -7,6 +7,7 @@ use App\Models\Proceso;
 use App\Models\Sede;
 use App\Models\Vacante;
 use App\Services\Admision\VacanteService;
+use App\Services\Admision\ValidadorCuadroVacantes;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -178,12 +179,13 @@ class extends Component
     /**
      * @return array<string, mixed>
      */
-    public function with(VacanteService $servicio): array
+    public function with(VacanteService $servicio, ValidadorCuadroVacantes $validador): array
     {
         $proceso = $this->proceso();
 
         return [
             'proceso' => $proceso,
+            'reglamento' => $proceso === null ? null : $validador->revisar($proceso->anio_pro),
             'procesos' => Proceso::orderByDesc('anio_pro')->orderByDesc('convocatoria_pro')->get(),
             'cuadro' => $proceso === null ? collect() : $servicio->cuadro($proceso)->groupBy(
                 fn (Vacante $vacante): string => $vacante->modalidad->nombre_mod.' · '.$vacante->sede->nombre_sed,

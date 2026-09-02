@@ -58,6 +58,104 @@
             </flux:callout>
         @endif
 
+        <flux:card class="space-y-4">
+            <div>
+                <flux:heading size="lg">Cuadro general {{ $reglamento['anio'] }} · Arts. 14 y 16</flux:heading>
+                <flux:text class="mt-1">
+                    El Art. 14 reparte el cuadro general en 25%, 25% y 50%, y el Art. 16 deja hasta el 30% de cada
+                    Escuela Profesional al CEPREUNU. Se mide sobre la cifra aprobada, sin contar el arrastre de los
+                    Arts. 17, 18 y 19. Son topes de referencia: la cifra final la ratifica el Consejo Universitario.
+                </flux:text>
+            </div>
+
+            @if ($reglamento['observaciones'] === [])
+                <flux:callout icon="check-circle" variant="success">
+                    <flux:callout.text>
+                        Las {{ number_format($reglamento['total']) }} vacantes del año respetan ambos artículos.
+                    </flux:callout.text>
+                </flux:callout>
+            @else
+                <flux:callout icon="exclamation-triangle" variant="warning">
+                    <flux:callout.heading>Revisar antes de publicar el cuadro</flux:callout.heading>
+                    <flux:callout.text>
+                        <ul class="list-disc space-y-1 ps-4">
+                            @foreach ($reglamento['observaciones'] as $observacion)
+                                <li><strong>{{ $observacion['articulo'] }}:</strong> {{ $observacion['mensaje'] }}</li>
+                            @endforeach
+                        </ul>
+                    </flux:callout.text>
+                </flux:callout>
+            @endif
+
+            <div class="grid gap-4 lg:grid-cols-2">
+                <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                    <table class="w-full text-sm">
+                        <thead class="bg-zinc-100 text-left dark:bg-zinc-800">
+                            <tr>
+                                <th class="px-3 py-2">Convocatoria (Art. 14)</th>
+                                <th class="w-24 px-3 py-2 text-right">Vacantes</th>
+                                <th class="w-28 px-3 py-2 text-right">Reparto</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                            @foreach ($reglamento['art14'] as $fila)
+                                <tr wire:key="art14-{{ $fila['convocatoria']->value }}">
+                                    <td class="px-3 py-2">
+                                        <div class="font-medium">{{ $fila['convocatoria']->etiqueta() }}</div>
+                                        <div class="text-xs text-zinc-500">
+                                            {{ $fila['proceso']?->codigo_pro ?? 'Sin configurar' }} ·
+                                            le corresponde {{ $fila['porcentaje_esperado'] }}% ({{ $fila['esperadas'] }})
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-2 text-right">{{ number_format($fila['vacantes']) }}</td>
+                                    <td @class([
+                                        'px-3 py-2 text-right font-semibold',
+                                        'text-amber-600 dark:text-amber-400' => $reglamento['completo'] && ! $fila['cumple'],
+                                    ])>
+                                        {{ number_format($fila['porcentaje'], 2) }}%
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="max-h-72 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                    <table class="w-full text-sm">
+                        <thead class="sticky top-0 bg-zinc-100 text-left dark:bg-zinc-800">
+                            <tr>
+                                <th class="px-3 py-2">Escuela Profesional (Art. 16)</th>
+                                <th class="w-28 px-3 py-2 text-right">CEPREUNU</th>
+                                <th class="w-24 px-3 py-2 text-right">Cupo</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                            @forelse ($reglamento['art16'] as $fila)
+                                <tr wire:key="art16-{{ $fila['carrera']->id_car }}">
+                                    <td class="px-3 py-2">{{ $fila['carrera']->nombre_corto_car }}</td>
+                                    <td class="px-3 py-2 text-right">
+                                        {{ $fila['cepreunu'] }} de {{ $fila['total'] }}
+                                    </td>
+                                    <td @class([
+                                        'px-3 py-2 text-right font-semibold',
+                                        'text-amber-600 dark:text-amber-400' => $fila['excede'],
+                                    ])>
+                                        {{ number_format($fila['porcentaje'], 2) }}%
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="px-3 py-4 text-center text-zinc-500">
+                                        Todavía no hay vacantes cargadas en el año.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </flux:card>
+
         @forelse ($cuadro as $grupo => $filas)
             <div class="space-y-2">
                 <div class="flex items-baseline justify-between gap-3">

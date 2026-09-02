@@ -27,4 +27,17 @@ enum GrupoModalidad: string
             self::Traslado => 'Traslado',
         };
     }
+
+    /**
+     * Grupos que el Art. 23 pasa al examen ordinario cuando no logran vacante
+     * por su propia modalidad. La reserva y el PRONABEC no estan incluidos:
+     * el articulo solo nombra a exonerados, trasladados y convenios.
+     */
+    public function pasaAlOrdinario(): bool
+    {
+        return match ($this) {
+            self::Exoneracion, self::Convenio, self::Traslado => true,
+            self::Ordinario, self::Reserva, self::Pronabec => false,
+        };
+    }
 }

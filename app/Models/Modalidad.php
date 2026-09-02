@@ -49,4 +49,23 @@ class Modalidad extends Model
             'estado_mod' => EstadoRegistro::class,
         ];
     }
+
+    /**
+     * Art. 23: los exonerados, trasladados y de convenio que no logran su
+     * ingreso por su modalidad pasan automaticamente al examen ordinario sin
+     * costo alguno, con excepcion de los postulantes del CEPREUNU.
+     */
+    public function pasaAlExamenOrdinario(): bool
+    {
+        return $this->grupo_mod->pasaAlOrdinario() && ! $this->esCepreunu();
+    }
+
+    /**
+     * Si la modalidad consume el cupo del CEPREUNU que limita el Art. 16.
+     * Son las dos que el convenio genera: la exoneracion y la reserva.
+     */
+    public function esCepreunu(): bool
+    {
+        return str_contains($this->codigo_mod, 'CEPREUNU');
+    }
 }

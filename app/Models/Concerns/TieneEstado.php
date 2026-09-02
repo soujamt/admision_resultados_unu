@@ -57,7 +57,8 @@ trait TieneEstado
 
     /**
      * Alias en femenino, para que en las consultas se lea igual de bien
-     * `Carrera::habilitadas()` que `Proceso::habilitados()`.
+     * `Carrera::habilitada()` que `Proceso::habilitado()`. Ambos scopes van
+     * en singular: `habilitadas()` no existe.
      *
      * @param  Builder<static>  $consulta
      */

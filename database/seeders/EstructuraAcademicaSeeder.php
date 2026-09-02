@@ -34,6 +34,7 @@ class EstructuraAcademicaSeeder extends Seeder
                     'id_are' => $areas[$carrera['area']],
                     'nombre_car' => $carrera['nombre'],
                     'nombre_corto_car' => $carrera['corto'],
+                    'puntaje_minimo_car' => $carrera['minimo'],
                     'estado_car' => EstadoRegistro::Habilitado,
                 ],
             );
@@ -118,32 +119,36 @@ class EstructuraAcademicaSeeder extends Seeder
     }
 
     /**
-     * @return list<array{codigo: string, nombre: string, corto: string, facultad: string, area: int}>
+     * `minimo` es la nota final minima del Art. 81: 50 en todas las carreras
+     * salvo Psicologia (55) y Medicina Humana (60). Se deja en null cuando
+     * rige el minimo general, que se configura en la jornada de examen.
+     *
+     * @return list<array{codigo: string, nombre: string, corto: string, facultad: string, area: int, minimo: ?float}>
      */
     private function carreras(): array
     {
         return [
-            ['codigo' => 'AGRONOMIA', 'nombre' => 'Agronomía', 'corto' => 'Agronomía', 'facultad' => 'AGROPECUARIAS', 'area' => 1],
-            ['codigo' => 'ING_AGROINDUSTRIAL', 'nombre' => 'Ingeniería Agroindustrial', 'corto' => 'Ing. Agroindustrial', 'facultad' => 'AGROPECUARIAS', 'area' => 1],
-            ['codigo' => 'ING_FORESTAL', 'nombre' => 'Ingeniería Forestal', 'corto' => 'Ing. Forestal', 'facultad' => 'FORESTALES', 'area' => 1],
-            ['codigo' => 'ING_AMBIENTAL', 'nombre' => 'Ingeniería Ambiental', 'corto' => 'Ing. Ambiental', 'facultad' => 'FORESTALES', 'area' => 1],
-            ['codigo' => 'PSICOLOGIA', 'nombre' => 'Psicología', 'corto' => 'Psicología', 'facultad' => 'SALUD', 'area' => 2],
-            ['codigo' => 'ENFERMERIA', 'nombre' => 'Enfermería', 'corto' => 'Enfermería', 'facultad' => 'SALUD', 'area' => 2],
-            ['codigo' => 'MEDICINA_HUMANA', 'nombre' => 'Medicina Humana', 'corto' => 'Medicina Humana', 'facultad' => 'MEDICINA', 'area' => 2],
-            ['codigo' => 'ADMINISTRACION', 'nombre' => 'Administración', 'corto' => 'Administración', 'facultad' => 'ECONOMICAS', 'area' => 3],
-            ['codigo' => 'CONTABILIDAD', 'nombre' => 'Contabilidad', 'corto' => 'Contabilidad', 'facultad' => 'ECONOMICAS', 'area' => 3],
-            ['codigo' => 'ECONOMIA', 'nombre' => 'Economía y Negocios Internacionales', 'corto' => 'Economía y Neg. Int.', 'facultad' => 'ECONOMICAS', 'area' => 3],
-            ['codigo' => 'ING_SISTEMAS', 'nombre' => 'Ingeniería de Sistemas', 'corto' => 'Ing. de Sistemas', 'facultad' => 'SISTEMAS_CIVIL', 'area' => 4],
-            ['codigo' => 'ING_CIVIL', 'nombre' => 'Ingeniería Civil', 'corto' => 'Ing. Civil', 'facultad' => 'SISTEMAS_CIVIL', 'area' => 4],
-            ['codigo' => 'DERECHO', 'nombre' => 'Derecho', 'corto' => 'Derecho', 'facultad' => 'DERECHO', 'area' => 5],
-            ['codigo' => 'EDU_INICIAL', 'nombre' => 'Educación Inicial', 'corto' => 'Educación Inicial', 'facultad' => 'EDUCACION', 'area' => 5],
-            ['codigo' => 'EDU_PRIMARIA', 'nombre' => 'Educación Primaria', 'corto' => 'Educación Primaria', 'facultad' => 'EDUCACION', 'area' => 5],
-            ['codigo' => 'EDU_SEC_INGLES', 'nombre' => 'Educación Secundaria: Especialidad Idioma Inglés', 'corto' => 'Edu. Sec. Inglés', 'facultad' => 'EDUCACION', 'area' => 5],
-            ['codigo' => 'EDU_SEC_LENGUA', 'nombre' => 'Educación Secundaria: Especialidad Lengua y Literatura', 'corto' => 'Edu. Sec. Lengua y Literatura', 'facultad' => 'EDUCACION', 'area' => 5],
-            ['codigo' => 'EDU_SEC_MATEMATICA', 'nombre' => 'Educación Secundaria: Especialidad Matemática, Física e Informática', 'corto' => 'Edu. Sec. Matemática', 'facultad' => 'EDUCACION', 'area' => 5],
-            ['codigo' => 'EDU_SEC_CIENCIAS', 'nombre' => 'Educación Secundaria: Especialidad Ciencias Naturales y Medio Ambiente', 'corto' => 'Edu. Sec. Ciencias Naturales', 'facultad' => 'EDUCACION', 'area' => 5],
-            ['codigo' => 'EDU_SEC_SOCIALES', 'nombre' => 'Educación Secundaria: Especialidad Ciencias Sociales y Educación Intercultural', 'corto' => 'Edu. Sec. Ciencias Sociales', 'facultad' => 'EDUCACION', 'area' => 5],
-            ['codigo' => 'CIENCIAS_COMUNICACION', 'nombre' => 'Ciencias de la Comunicación', 'corto' => 'Ciencias de la Comunicación', 'facultad' => 'EDUCACION', 'area' => 5],
+            ['codigo' => 'AGRONOMIA', 'nombre' => 'Agronomía', 'corto' => 'Agronomía', 'facultad' => 'AGROPECUARIAS', 'area' => 1, 'minimo' => null],
+            ['codigo' => 'ING_AGROINDUSTRIAL', 'nombre' => 'Ingeniería Agroindustrial', 'corto' => 'Ing. Agroindustrial', 'facultad' => 'AGROPECUARIAS', 'area' => 1, 'minimo' => null],
+            ['codigo' => 'ING_FORESTAL', 'nombre' => 'Ingeniería Forestal', 'corto' => 'Ing. Forestal', 'facultad' => 'FORESTALES', 'area' => 1, 'minimo' => null],
+            ['codigo' => 'ING_AMBIENTAL', 'nombre' => 'Ingeniería Ambiental', 'corto' => 'Ing. Ambiental', 'facultad' => 'FORESTALES', 'area' => 1, 'minimo' => null],
+            ['codigo' => 'PSICOLOGIA', 'nombre' => 'Psicología', 'corto' => 'Psicología', 'facultad' => 'SALUD', 'area' => 2, 'minimo' => 55],
+            ['codigo' => 'ENFERMERIA', 'nombre' => 'Enfermería', 'corto' => 'Enfermería', 'facultad' => 'SALUD', 'area' => 2, 'minimo' => null],
+            ['codigo' => 'MEDICINA_HUMANA', 'nombre' => 'Medicina Humana', 'corto' => 'Medicina Humana', 'facultad' => 'MEDICINA', 'area' => 2, 'minimo' => 60],
+            ['codigo' => 'ADMINISTRACION', 'nombre' => 'Administración', 'corto' => 'Administración', 'facultad' => 'ECONOMICAS', 'area' => 3, 'minimo' => null],
+            ['codigo' => 'CONTABILIDAD', 'nombre' => 'Contabilidad', 'corto' => 'Contabilidad', 'facultad' => 'ECONOMICAS', 'area' => 3, 'minimo' => null],
+            ['codigo' => 'ECONOMIA', 'nombre' => 'Economía y Negocios Internacionales', 'corto' => 'Economía y Neg. Int.', 'facultad' => 'ECONOMICAS', 'area' => 3, 'minimo' => null],
+            ['codigo' => 'ING_SISTEMAS', 'nombre' => 'Ingeniería de Sistemas', 'corto' => 'Ing. de Sistemas', 'facultad' => 'SISTEMAS_CIVIL', 'area' => 4, 'minimo' => null],
+            ['codigo' => 'ING_CIVIL', 'nombre' => 'Ingeniería Civil', 'corto' => 'Ing. Civil', 'facultad' => 'SISTEMAS_CIVIL', 'area' => 4, 'minimo' => null],
+            ['codigo' => 'DERECHO', 'nombre' => 'Derecho', 'corto' => 'Derecho', 'facultad' => 'DERECHO', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'EDU_INICIAL', 'nombre' => 'Educación Inicial', 'corto' => 'Educación Inicial', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'EDU_PRIMARIA', 'nombre' => 'Educación Primaria', 'corto' => 'Educación Primaria', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'EDU_SEC_INGLES', 'nombre' => 'Educación Secundaria: Especialidad Idioma Inglés', 'corto' => 'Edu. Sec. Inglés', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'EDU_SEC_LENGUA', 'nombre' => 'Educación Secundaria: Especialidad Lengua y Literatura', 'corto' => 'Edu. Sec. Lengua y Literatura', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'EDU_SEC_MATEMATICA', 'nombre' => 'Educación Secundaria: Especialidad Matemática, Física e Informática', 'corto' => 'Edu. Sec. Matemática', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'EDU_SEC_CIENCIAS', 'nombre' => 'Educación Secundaria: Especialidad Ciencias Naturales y Medio Ambiente', 'corto' => 'Edu. Sec. Ciencias Naturales', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'EDU_SEC_SOCIALES', 'nombre' => 'Educación Secundaria: Especialidad Ciencias Sociales y Educación Intercultural', 'corto' => 'Edu. Sec. Ciencias Sociales', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
+            ['codigo' => 'CIENCIAS_COMUNICACION', 'nombre' => 'Ciencias de la Comunicación', 'corto' => 'Ciencias de la Comunicación', 'facultad' => 'EDUCACION', 'area' => 5, 'minimo' => null],
         ];
     }
 }

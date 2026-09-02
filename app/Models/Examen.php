@@ -17,11 +17,20 @@ class Examen extends Model
 
     protected $primaryKey = 'id_exa';
 
-    protected $fillable = ['id_pro', 'nombre_exa', 'fecha_exa', 'puntaje_acierto_exa', 'puntaje_error_exa', 'puntaje_blanco_exa', 'resuelto_en_exa'];
+    protected $fillable = ['id_pro', 'nombre_exa', 'fecha_exa', 'puntaje_acierto_exa', 'puntaje_error_exa', 'puntaje_blanco_exa', 'puntaje_minimo_exa', 'umbral_factor_dificultad_exa', 'aplicar_factor_dificultad_exa', 'resuelto_en_exa'];
 
     protected function casts(): array
     {
-        return ['fecha_exa' => 'date', 'resuelto_en_exa' => 'datetime', 'puntaje_acierto_exa' => 'decimal:3', 'puntaje_error_exa' => 'decimal:3', 'puntaje_blanco_exa' => 'decimal:3'];
+        return [
+            'fecha_exa' => 'date',
+            'resuelto_en_exa' => 'datetime',
+            'puntaje_acierto_exa' => 'decimal:3',
+            'puntaje_error_exa' => 'decimal:3',
+            'puntaje_blanco_exa' => 'decimal:3',
+            'puntaje_minimo_exa' => 'decimal:4',
+            'umbral_factor_dificultad_exa' => 'decimal:2',
+            'aplicar_factor_dificultad_exa' => 'boolean',
+        ];
     }
 
     public function proceso(): BelongsTo

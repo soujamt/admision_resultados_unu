@@ -65,6 +65,15 @@ enum Permiso: string
     case ResultadosVer = 'resultados.ver';
     case ResultadosConfigurarAulas = 'resultados.configurar-aulas';
     case ResultadosSortearAulas = 'resultados.sortear-aulas';
+    case ResultadosImportar = 'resultados.importar';
+    case ResultadosGenerar = 'resultados.generar';
+    case ResultadosAnular = 'resultados.anular';
+    case ResultadosExportar = 'resultados.exportar';
+
+    case IngresantesVer = 'ingresantes.ver';
+    case IngresantesGenerar = 'ingresantes.generar';
+    case IngresantesCondicion = 'ingresantes.condicion';
+    case IngresantesArrastrar = 'ingresantes.arrastrar';
 
     public function etiqueta(): string
     {
@@ -110,6 +119,14 @@ enum Permiso: string
             self::ResultadosVer => 'Ver resultados y aulas de examen',
             self::ResultadosConfigurarAulas => 'Configurar distribución de aulas',
             self::ResultadosSortearAulas => 'Sortear aulas y asientos',
+            self::ResultadosImportar => 'Importar padrón y respuestas TXT',
+            self::ResultadosGenerar => 'Configurar y generar resultados',
+            self::ResultadosAnular => 'Anular y restaurar postulaciones',
+            self::ResultadosExportar => 'Exportar resultados en PDF',
+            self::IngresantesVer => 'Ver el padrón de ingresantes',
+            self::IngresantesGenerar => 'Generar el padrón de ingresantes',
+            self::IngresantesCondicion => 'Registrar pérdida de la condición de ingresante',
+            self::IngresantesArrastrar => 'Aplicar el arrastre de vacantes',
         };
     }
 

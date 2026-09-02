@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoResultado;
 use Database\Factories\ResultadoFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,11 +17,18 @@ class Resultado extends Model
 
     protected $primaryKey = 'id_res';
 
-    protected $fillable = ['id_exa', 'id_exp', 'id_vac', 'puntaje_res', 'orden_general_res', 'orden_carrera_res', 'estado_res'];
+    protected $fillable = ['id_exa', 'id_exp', 'id_vac', 'puntaje_directo_res', 'factor_dificultad_res', 'puntaje_res', 'puntaje_minimo_res', 'orden_general_res', 'orden_carrera_res', 'repesca_res', 'estado_res', 'motivo_res'];
 
     protected function casts(): array
     {
-        return ['puntaje_res' => 'decimal:4'];
+        return [
+            'puntaje_directo_res' => 'decimal:4',
+            'factor_dificultad_res' => 'decimal:6',
+            'puntaje_res' => 'decimal:4',
+            'puntaje_minimo_res' => 'decimal:4',
+            'repesca_res' => 'boolean',
+            'estado_res' => EstadoResultado::class,
+        ];
     }
 
     public function examen(): BelongsTo

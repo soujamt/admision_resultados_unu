@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\EstadoRegistro;
+use App\Models\Concerns\TieneEstado;
 use Database\Factories\VacanteFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $id_car
  * @property int $id_sed
  * @property int $cantidad_vac
+ * @property int $cantidad_arrastre_vac plazas sumadas por los Arts. 17, 18 y 19
+ * @property ?string $motivo_arrastre_vac
  * @property ?int $codigo_externo_vac
  * @property EstadoRegistro $estado_vac
  * @property-read int $inscritos  solo cuando la consulta lo selecciona (VacanteService::cuadro)
@@ -34,7 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Vacante extends Model
 {
     /** @use HasFactory<VacanteFactory> */
-    use HasFactory;
+    use HasFactory, TieneEstado;
 
     protected $table = 'tbl_vacante';
 
@@ -46,6 +49,8 @@ class Vacante extends Model
         'id_car',
         'id_sed',
         'cantidad_vac',
+        'cantidad_arrastre_vac',
+        'motivo_arrastre_vac',
         'codigo_externo_vac',
         'estado_vac',
     ];
@@ -56,6 +61,16 @@ class Vacante extends Model
     protected function casts(): array
     {
         return ['estado_vac' => EstadoRegistro::class];
+    }
+
+    /**
+     * Plazas que la vacante ofrece de verdad: las que aprobo el Consejo
+     * Universitario por el Art. 15 mas las que le arrastraron los Arts. 17,
+     * 18 y 19. Toda adjudicacion y todo conteo de desiertas usa esta cifra.
+     */
+    public function plazas(): int
+    {
+        return $this->cantidad_vac + $this->cantidad_arrastre_vac;
     }
 
     /**

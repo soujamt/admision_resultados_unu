@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\EstadoResultado;
 use App\Models\Examen;
 use App\Models\ExamenPostulante;
 use App\Models\Resultado;
@@ -25,9 +26,12 @@ class ResultadoFactory extends Factory
             'id_exa' => Examen::factory(),
             'id_exp' => ExamenPostulante::factory(),
             'puntaje_res' => 50,
+            'puntaje_directo_res' => 50,
+            'factor_dificultad_res' => 1,
+            'puntaje_minimo_res' => 50,
             'orden_general_res' => 1,
             'orden_carrera_res' => 1,
-            'estado_res' => 'pendiente',
+            'estado_res' => EstadoResultado::Pendiente,
         ];
     }
 }

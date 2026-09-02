@@ -17,7 +17,24 @@ class ExamenPostulante extends Model
 
     protected $primaryKey = 'id_exp';
 
-    protected $fillable = ['id_exa', 'id_ins', 'codigo_cartilla_exp', 'documento_exp', 'nombre_exp', 'codigo_carrera_exp', 'codigo_modalidad_exp', 'aula_origen_exp'];
+    protected $fillable = ['id_exa', 'id_ins', 'codigo_cartilla_exp', 'documento_exp', 'nombre_exp', 'codigo_carrera_exp', 'codigo_modalidad_exp', 'aula_origen_exp', 'anulado_en_exp', 'motivo_anulacion_exp'];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return ['anulado_en_exp' => 'datetime'];
+    }
+
+    /**
+     * Un postulante anulado por los Arts. 79, 96 y 105 al 108 no compite por
+     * ninguna vacante, aunque su tarjeta optica se haya leido.
+     */
+    public function estaAnulado(): bool
+    {
+        return $this->anulado_en_exp !== null;
+    }
 
     public function examen(): BelongsTo
     {

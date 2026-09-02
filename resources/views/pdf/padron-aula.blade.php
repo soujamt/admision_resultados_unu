@@ -107,15 +107,15 @@
             }
 
             .listado .col-documento {
-                width: 15%;
+                width: 12%;
             }
 
             .listado .col-postulante {
-                width: 65%;
+                width: 70%;
             }
 
             .listado .col-asiento {
-                width: 15%;
+                width: 13%;
             }
 
             .centro {

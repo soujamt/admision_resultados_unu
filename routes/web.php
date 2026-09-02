@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Auth\SalirController;
 use App\Http\Controllers\Inscripciones\MostrarFotoController;
+use App\Http\Controllers\Resultados\ExportarJuegoResultadosController;
 use App\Http\Controllers\Resultados\ExportarPadronAulaController;
+use App\Http\Controllers\Resultados\ExportarResultadosController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/inicio');
@@ -36,6 +38,10 @@ Route::middleware('auth')->group(function () {
 
     Route::livewire('/resultados/aulas', 'pages::resultados.aulas')->name('resultados.aulas');
     Route::get('/resultados/aulas/{aulaExamen}/padron', ExportarPadronAulaController::class)->name('resultados.aulas.padron');
+    Route::livewire('/resultados/procesamiento', 'pages::resultados.procesamiento')->name('resultados.procesamiento');
+    Route::livewire('/resultados/ingresantes', 'pages::resultados.ingresantes')->name('resultados.ingresantes');
+    Route::get('/resultados/{examen}/pdf', ExportarResultadosController::class)->name('resultados.pdf');
+    Route::get('/resultados/{examen}/pdf/juego', ExportarJuegoResultadosController::class)->name('resultados.pdf.juego');
 
     Route::post('/salir', SalirController::class)->name('auth.salir');
 });

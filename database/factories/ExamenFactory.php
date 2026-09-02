@@ -27,6 +27,9 @@ class ExamenFactory extends Factory
             'puntaje_acierto_exa' => 1,
             'puntaje_error_exa' => -0.010,
             'puntaje_blanco_exa' => 0.100,
+            'puntaje_minimo_exa' => 50,
+            'umbral_factor_dificultad_exa' => 40,
+            'aplicar_factor_dificultad_exa' => true,
         ];
     }
 }

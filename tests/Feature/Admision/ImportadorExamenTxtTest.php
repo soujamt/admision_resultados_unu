@@ -16,8 +16,13 @@ it('importa y cruza el padrón con las respuestas del lector óptico', function 
     Storage::disk('local')->put('respuestas.txt', 'DARACOD;DIRECTA;TRANSFORMADA;ACIERTOS;ERRORES;BLANCOS;DOBLES;RESPUESTAS;'."\n".'3894;23,00000;5,60976;23;77;0;0;'.implode(';', array_fill(0, 100, 'A')).";\n");
 
     $importador = app(ImportadorExamenTxt::class);
-    expect($importador->importarPadron($examen, Storage::disk('local')->path('padron.txt')))->toBe(1)
-        ->and($importador->importarRespuestas($examen, Storage::disk('local')->path('respuestas.txt')))->toBe(1);
+    $padron = $importador->importarPadron($examen, Storage::disk('local')->path('padron.txt'));
+    $respuestas = $importador->importarRespuestas($examen, Storage::disk('local')->path('respuestas.txt'));
+
+    expect($padron->filas)->toBe(1)
+        ->and($padron->importado)->toBeTrue()
+        ->and($respuestas->filas)->toBe(1)
+        ->and($respuestas->importado)->toBeTrue();
 
     $postulante = ExamenPostulante::where('id_exa', $examen->id_exa)->sole();
     $respuesta = ExamenRespuesta::where('id_exp', $postulante->id_exp)->sole();
@@ -25,4 +30,38 @@ it('importa y cruza el padrón con las respuestas del lector óptico', function 
     expect($postulante->id_ins)->toBe($inscripcion->id_ins)
         ->and($respuesta->aciertos_exr)->toBe(23)
         ->and($respuesta->respuestas_exr)->toHaveCount(100);
+});
+
+it('convierte el padrón windows 1252 y reporta documentos que no cruzan', function () {
+    Storage::fake('local');
+    $examen = Examen::factory()->create();
+    $contenido = "DARACOD;COD POSTULANTE;APELLDOS Y NOMBRES;CARRERAS;MODALIDAD;MOD EXTRA;AULA;\n3894;87654321;PIÑA LÓPEZ, ANA;INGAA;OR;;009;\n";
+    Storage::disk('local')->put('padron-ansi.txt', mb_convert_encoding($contenido, 'Windows-1252', 'UTF-8'));
+
+    $resumen = app(ImportadorExamenTxt::class)->importarPadron(
+        $examen,
+        Storage::disk('local')->path('padron-ansi.txt'),
+    );
+
+    expect($resumen->importado)->toBeTrue()
+        ->and($resumen->observaciones)->toHaveCount(1)
+        ->and(ExamenPostulante::sole()->nombre_exp)->toBe('PIÑA LÓPEZ, ANA')
+        ->and(ExamenPostulante::sole()->id_ins)->toBeNull();
+});
+
+it('no altera las respuestas si una cartilla del archivo no existe en el padrón', function () {
+    Storage::fake('local');
+    $postulante = ExamenPostulante::factory()->create();
+    ExamenRespuesta::factory()->create(['id_exp' => $postulante->id_exp, 'aciertos_exr' => 75]);
+    $fila = 'CARTILLA-AJENA;23;23;23;77;0;0;'.implode(';', array_fill(0, 100, 'A')).";\n";
+    Storage::disk('local')->put('respuestas-invalidas.txt', "CABECERA\n{$fila}");
+
+    $resumen = app(ImportadorExamenTxt::class)->importarRespuestas(
+        $postulante->examen,
+        Storage::disk('local')->path('respuestas-invalidas.txt'),
+    );
+
+    expect($resumen->importado)->toBeFalse()
+        ->and($resumen->observaciones[0])->toContain('no existe en el padrón')
+        ->and($postulante->respuesta()->value('aciertos_exr'))->toBe(75);
 });

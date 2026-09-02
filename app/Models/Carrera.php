@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $codigo_car
  * @property string $nombre_car
  * @property string $nombre_corto_car
+ * @property ?string $puntaje_minimo_car nota final minima del Art. 81; null hereda la del examen
  * @property EstadoRegistro $estado_car
  * @property-read Facultad $facultad
  * @property-read Area $area
@@ -35,14 +36,14 @@ class Carrera extends Model
 
     protected $primaryKey = 'id_car';
 
-    protected $fillable = ['id_fac', 'id_are', 'codigo_car', 'nombre_car', 'nombre_corto_car', 'estado_car'];
+    protected $fillable = ['id_fac', 'id_are', 'codigo_car', 'nombre_car', 'nombre_corto_car', 'puntaje_minimo_car', 'estado_car'];
 
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['estado_car' => EstadoRegistro::class];
+        return ['estado_car' => EstadoRegistro::class, 'puntaje_minimo_car' => 'decimal:2'];
     }
 
     /**

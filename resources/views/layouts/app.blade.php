@@ -61,10 +61,30 @@
                 <flux:sidebar.item
                     icon="building-library"
                     :href="route('resultados.aulas')"
-                    :current="request()->routeIs('resultados.*')"
+                    :current="request()->routeIs('resultados.aulas*')"
                     wire:navigate
                 >
                     Examen y aulas
+                </flux:sidebar.item>
+
+                <flux:sidebar.item
+                    icon="chart-bar-square"
+                    :href="route('resultados.procesamiento')"
+                    :current="request()->routeIs('resultados.procesamiento*')"
+                    wire:navigate
+                >
+                    Resultados
+                </flux:sidebar.item>
+            @endcan
+
+            @can(App\Enums\Permiso::IngresantesVer->value)
+                <flux:sidebar.item
+                    icon="user-group"
+                    :href="route('resultados.ingresantes')"
+                    :current="request()->routeIs('resultados.ingresantes*')"
+                    wire:navigate
+                >
+                    Ingresantes
                 </flux:sidebar.item>
             @endcan
 

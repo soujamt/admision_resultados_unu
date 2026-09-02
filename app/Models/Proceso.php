@@ -33,6 +33,8 @@ use Illuminate\Support\Carbon;
  * @property EstadoRegistro $estado_pro
  * @property-read Collection<int, Vacante> $vacantes
  * @property-read Collection<int, Inscripcion> $inscripciones
+ * @property-read Collection<int, Examen> $examenes
+ * @property-read Collection<int, Ingresante> $ingresantes
  * @property-read Collection<int, Modalidad> $modalidades
  */
 class Proceso extends Model
@@ -84,6 +86,24 @@ class Proceso extends Model
     public function inscripciones(): HasMany
     {
         return $this->hasMany(Inscripcion::class, 'id_pro', 'id_pro');
+    }
+
+    /**
+     * @return HasMany<Examen, $this>
+     */
+    public function examenes(): HasMany
+    {
+        return $this->hasMany(Examen::class, 'id_pro', 'id_pro');
+    }
+
+    /**
+     * Padron oficial de ingresantes del Art. 89.
+     *
+     * @return HasMany<Ingresante, $this>
+     */
+    public function ingresantes(): HasMany
+    {
+        return $this->hasMany(Ingresante::class, 'id_pro', 'id_pro');
     }
 
     /**
