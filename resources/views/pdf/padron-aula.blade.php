@@ -102,6 +102,22 @@
                 vertical-align: middle;
             }
 
+            .listado .col-numero {
+                width: 5%;
+            }
+
+            .listado .col-documento {
+                width: 10%;
+            }
+
+            .listado .col-postulante {
+                width: 70%;
+            }
+
+            .listado .col-asiento {
+                width: 15%;
+            }
+
             .centro {
                 text-align: center;
             }
@@ -152,28 +168,22 @@
         </table>
 
         <table class="listado">
-            <colgroup>
-                <col style="width: 10%">
-                <col style="width: 20%">
-                <col style="width: 50%">
-                <col style="width: 20%">
-            </colgroup>
             <thead>
                 <tr>
-                    <th>N°</th>
-                    <th>Documento</th>
-                    <th>Apellidos y nombres</th>
-                    <th>Asiento</th>
+                    <th class="col-numero">N°</th>
+                    <th class="col-documento">Documento</th>
+                    <th class="col-postulante">Apellidos y nombres</th>
+                    <th class="col-asiento">Asiento</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($asignaciones as $indice => $asignacion)
                     @php($inscripcion = $asignacion->inscripcion)
                     <tr>
-                        <td class="centro">{{ $indice + 1 }}</td>
-                        <td class="centro">{{ $inscripcion->postulante->numero_documento_pos }}</td>
-                        <td>{{ $inscripcion->postulante->nombreCompleto() }}</td>
-                        <td class="centro">{{ $asignacion->asiento_ase }}</td>
+                        <td class="centro col-numero">{{ $indice + 1 }}</td>
+                        <td class="centro col-documento">{{ $inscripcion->postulante->numero_documento_pos }}</td>
+                        <td class="col-postulante">{{ $inscripcion->postulante->nombreCompleto() }}</td>
+                        <td class="centro col-asiento">{{ $asignacion->asiento_ase }}</td>
                     </tr>
                 @empty
                     <tr>

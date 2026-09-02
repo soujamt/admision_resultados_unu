@@ -92,5 +92,12 @@ it('exporta el padrón del aula desde las inscripciones aunque no exista un TXT'
         'PUCALLPA',
         '87654321',
     );
-    expect($html)->toMatch('/<th>Apellidos y nombres<\/th>\s*<th>Asiento<\/th>/');
+    expect($html)->toMatch('/<th class="col-postulante">Apellidos y nombres<\/th>\s*<th class="col-asiento">Asiento<\/th>/');
+    expect($html)->toContain(
+        'class="col-numero"',
+        'class="col-documento"',
+        'class="col-postulante"',
+        'class="col-asiento"',
+        'width: 70%;',
+    );
 });
