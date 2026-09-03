@@ -5,6 +5,10 @@ namespace App\Services\Admision;
 /**
  * Lo que dejo una corrida de GeneradorLecturaOptica: donde quedaron los TXT y
  * que hay dentro, para que el comando lo muestre sin volver a abrirlos.
+ *
+ * `filasPadron` y `filasRespuestas` son siempre iguales, porque el lector
+ * entrega una tarjeta por cada fila de padron. `ausentes` cuenta a los
+ * inscritos que no quedaron en ninguno de los dos archivos.
  */
 class ResumenLecturaSimulada
 {

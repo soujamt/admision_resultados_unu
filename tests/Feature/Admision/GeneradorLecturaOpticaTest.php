@@ -72,7 +72,7 @@ it('genera una lectura que el importador cruza y el resolutor alcanza a adjudica
         ->and($resultado['ingresantes'])->toBeGreaterThan(0);
 });
 
-it('deja sin tarjeta óptica a los ausentes y el resolutor los publica como NSP', function () {
+it('entrega el mismo número de filas en el padrón y en las respuestas', function () {
     Storage::fake('local');
     $examen = jornadaConInscritos(4);
 
@@ -83,14 +83,29 @@ it('deja sin tarjeta óptica a los ausentes y el resolutor los publica como NSP'
         semilla: 2027,
     );
 
-    expect($lectura->filasPadron)->toBe(4)
-        ->and($lectura->filasRespuestas)->toBe(2);
+    expect($lectura->filasPadron)->toBe(2)
+        ->and($lectura->filasRespuestas)->toBe(2)
+        ->and($lectura->ausentes)->toBe(2);
+});
+
+it('deja fuera de los dos archivos al que no rinde y el resolutor lo publica como NSP', function () {
+    Storage::fake('local');
+    $examen = jornadaConInscritos(4);
+
+    $lectura = app(GeneradorLecturaOptica::class)->generar(
+        examen: $examen,
+        nivel: NivelDeExamen::Normal,
+        ausentes: 50,
+        semilla: 2027,
+    );
 
     $importador = app(ImportadorExamenTxt::class);
     $importador->importarPadron($examen, $lectura->padron);
     $importador->importarRespuestas($examen, $lectura->respuestas);
+    $resumen = app(ResolverResultadosService::class)->resolver($examen);
 
-    expect(app(ResolverResultadosService::class)->resolver($examen)['nsp'])->toBe(2);
+    expect($resumen['nsp'])->toBe(2)
+        ->and($resumen['postulantes'])->toBe(4);
 });
 
 it('escribe el padrón en Windows-1252 como lo entrega el lector óptico', function () {

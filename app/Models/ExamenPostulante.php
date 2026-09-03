@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Database\Factories\ExamenPostulanteFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +35,23 @@ class ExamenPostulante extends Model
     public function estaAnulado(): bool
     {
         return $this->anulado_en_exp !== null;
+    }
+
+    /**
+     * Filas que entrego el lector optico. Las que no tienen cartilla las
+     * completa la resolucion con los inscritos que no se presentaron, porque
+     * el Art. 76 los publica como NSP y nunca recibieron tarjeta.
+     *
+     * @param  Builder<ExamenPostulante>  $consulta
+     */
+    public function scopeDelLector(Builder $consulta): void
+    {
+        $consulta->whereNotNull('codigo_cartilla_exp');
+    }
+
+    public function sePresento(): bool
+    {
+        return $this->codigo_cartilla_exp !== null;
     }
 
     public function examen(): BelongsTo

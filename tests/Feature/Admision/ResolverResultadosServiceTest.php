@@ -6,7 +6,10 @@ use App\Enums\EstadoResultado;
 use App\Enums\GrupoModalidad;
 use App\Models\Carrera;
 use App\Models\Examen;
+use App\Models\ExamenPostulante;
+use App\Models\Inscripcion;
 use App\Models\Modalidad;
+use App\Models\Postulante;
 use App\Models\Proceso;
 use App\Models\Sede;
 use App\Models\Vacante;
@@ -78,6 +81,85 @@ it('aplica el factor de dificultad y detecta el examen complementario en tercera
         ->and($resumen['desiertas'])->toBe(4)
         ->and($resumen['porcentaje_desiertas'])->toBe(80.0)
         ->and($resumen['requiere_examen_complementario'])->toBeTrue();
+});
+
+it('aplica el factor solo a la carrera que alcanza el umbral de vacantes desiertas', function () {
+    $proceso = Proceso::factory()->codigo('2027-I')->create();
+    $sede = Sede::factory()->create();
+    $modalidad = Modalidad::factory()->create(['grupo_mod' => GrupoModalidad::Ordinario]);
+    $carreraDificil = Carrera::factory()->create();
+    $carreraCubierta = Carrera::factory()->create();
+    $vacanteDificil = Vacante::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'id_mod' => $modalidad->id_mod,
+        'id_car' => $carreraDificil->id_car,
+        'id_sed' => $sede->id_sed,
+        'cantidad_vac' => 5,
+    ]);
+    $vacanteCubierta = Vacante::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'id_mod' => $modalidad->id_mod,
+        'id_car' => $carreraCubierta->id_car,
+        'id_sed' => $sede->id_sed,
+        'cantidad_vac' => 6,
+    ]);
+    $examen = Examen::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'puntaje_error_exa' => 0,
+        'puntaje_blanco_exa' => 0,
+        'puntaje_minimo_exa' => 50,
+        'umbral_factor_dificultad_exa' => 40,
+        'aplicar_factor_dificultad_exa' => true,
+    ]);
+    $postulanteDificil = PadronDeExamen::postulante($examen, $vacanteDificil, 61, 40);
+    $postulanteCubierto = PadronDeExamen::postulante($examen, $vacanteCubierta, 62, 80);
+
+    foreach (range(63, 67) as $numero) {
+        PadronDeExamen::postulante($examen, $vacanteCubierta, $numero, 80);
+    }
+
+    $resumen = app(ResolverResultadosService::class)->resolver($examen);
+
+    expect((float) $postulanteDificil->resultado->factor_dificultad_res)->toBe(1.6)
+        ->and($postulanteDificil->resultado->estado_res)->toBe(EstadoResultado::Ingreso)
+        ->and((float) $postulanteCubierto->resultado->factor_dificultad_res)->toBe(1.0)
+        ->and($resumen['desiertas'])->toBe(4)
+        ->and($resumen['porcentaje_desiertas'])->toBe(36.36)
+        ->and($resumen['factor_aplicado'])->toBeTrue();
+});
+
+it('previsualiza la aplicación del factor por carrera sin guardar resultados', function () {
+    $proceso = Proceso::factory()->codigo('2027-I')->create();
+    $vacante = Vacante::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'cantidad_vac' => 5,
+    ]);
+    $examen = Examen::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'aplicar_factor_dificultad_exa' => false,
+    ]);
+    PadronDeExamen::postulante($examen, $vacante, 71, 40);
+
+    $previsualizacion = app(ResolverResultadosService::class)->previsualizar($examen, [
+        'puntaje_acierto_exa' => 1,
+        'puntaje_error_exa' => 0,
+        'puntaje_blanco_exa' => 0,
+        'puntaje_minimo_exa' => 50,
+        'umbral_factor_dificultad_exa' => 40,
+        'aplicar_factor_dificultad_exa' => true,
+    ], [$vacante->id_car => null]);
+    $carrera = collect($previsualizacion['carreras'])->firstWhere('id_car', $vacante->id_car);
+
+    expect($previsualizacion['factor_aplicado'])->toBeTrue()
+        ->and($previsualizacion['carreras_con_factor'])->toBe(1)
+        ->and($previsualizacion['ingresantes'])->toBe(1)
+        ->and($previsualizacion['desiertas'])->toBe(4)
+        ->and($carrera['ingresantes_sin_factor'])->toBe(0)
+        ->and($carrera['porcentaje_desiertas_sin_factor'])->toBe(100.0)
+        ->and($carrera['factor'])->toBe(1.6)
+        ->and($carrera['ingresantes_estimados'])->toBe(1)
+        ->and($examen->resultados()->count())->toBe(0)
+        ->and($examen->postulantes()->count())->toBe(1);
 });
 
 it('comparte un solo factor de dificultad entre todas las modalidades de la carrera', function () {
@@ -202,4 +284,74 @@ it('pasa al examen ordinario a quien no logra vacante por exoneración, salvo el
         ->and($cepreunuFuera->resultado->estado_res)->toBe(EstadoResultado::NoIngreso)
         ->and($cepreunuFuera->resultado->repesca_res)->toBeFalse()
         ->and($resumen['repescados'])->toBe(1);
+});
+
+it('publica como NSP al inscrito que no figura en el padrón del lector', function () {
+    $proceso = Proceso::factory()->codigo('2027-I')->create();
+    $vacante = Vacante::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'id_mod' => Modalidad::factory()->create(['grupo_mod' => GrupoModalidad::Ordinario]),
+        'id_car' => Carrera::factory()->create()->id_car,
+        'id_sed' => Sede::factory()->create()->id_sed,
+        'cantidad_vac' => 5,
+    ]);
+    $examen = Examen::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'puntaje_error_exa' => 0,
+        'puntaje_blanco_exa' => 0,
+        'puntaje_minimo_exa' => 50,
+        'aplicar_factor_dificultad_exa' => false,
+    ]);
+    $rindio = PadronDeExamen::postulante($examen, $vacante, 71, 80);
+
+    /* Inscrito del mismo proceso que nunca llegó al padrón del escáner. */
+    $ausente = Inscripcion::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'id_mod' => $vacante->id_mod,
+        'id_car' => $vacante->id_car,
+        'id_sed' => $vacante->id_sed,
+        'id_pos' => Postulante::factory()->create(['numero_documento_pos' => '00000072']),
+    ]);
+
+    $resumen = app(ResolverResultadosService::class)->resolver($examen);
+    $filaAusente = ExamenPostulante::query()
+        ->where('id_exa', $examen->id_exa)
+        ->where('id_ins', $ausente->id_ins)
+        ->firstOrFail();
+
+    expect($resumen['postulantes'])->toBe(2)
+        ->and($resumen['nsp'])->toBe(1)
+        ->and($resumen['ingresantes'])->toBe(1)
+        ->and($rindio->resultado->estado_res)->toBe(EstadoResultado::Ingreso)
+        ->and($filaAusente->codigo_cartilla_exp)->toBeNull()
+        ->and($filaAusente->sePresento())->toBeFalse()
+        ->and($filaAusente->resultado->estado_res)->toBe(EstadoResultado::Nsp);
+});
+
+it('no duplica la fila del no presentado al resolver dos veces', function () {
+    $proceso = Proceso::factory()->codigo('2027-I')->create();
+    $vacante = Vacante::factory()->create(['id_pro' => $proceso->id_pro, 'cantidad_vac' => 5]);
+    $examen = Examen::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'puntaje_error_exa' => 0,
+        'puntaje_blanco_exa' => 0,
+        'puntaje_minimo_exa' => 50,
+        'aplicar_factor_dificultad_exa' => false,
+    ]);
+    PadronDeExamen::postulante($examen, $vacante, 81, 80);
+    Inscripcion::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'id_mod' => $vacante->id_mod,
+        'id_car' => $vacante->id_car,
+        'id_sed' => $vacante->id_sed,
+        'id_pos' => Postulante::factory()->create(['numero_documento_pos' => '00000082']),
+    ]);
+    $servicio = app(ResolverResultadosService::class);
+
+    $servicio->resolver($examen);
+    $resumen = $servicio->resolver($examen);
+
+    expect($resumen['postulantes'])->toBe(2)
+        ->and($examen->postulantes()->count())->toBe(2)
+        ->and($examen->postulantes()->delLector()->count())->toBe(1);
 });

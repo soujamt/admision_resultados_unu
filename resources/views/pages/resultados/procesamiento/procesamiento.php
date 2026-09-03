@@ -57,6 +57,9 @@ class extends Component
     /** @var array<string, int|float|bool> */
     public array $ultimoResumen = [];
 
+    /** @var array<string, mixed> */
+    public array $previsualizacion = [];
+
     public function mount(): void
     {
         $this->authorize(Permiso::ResultadosVer->value);
@@ -84,6 +87,7 @@ class extends Component
         $this->minimosCarreras = [];
         $this->observacionesImportacion = [];
         $this->ultimoResumen = [];
+        $this->previsualizacion = [];
         $this->resetPage();
     }
 
@@ -91,6 +95,7 @@ class extends Component
     {
         $this->observacionesImportacion = [];
         $this->ultimoResumen = [];
+        $this->previsualizacion = [];
         $this->cargarConfiguracion();
         $this->resetPage();
     }
@@ -120,9 +125,7 @@ class extends Component
         $this->validate([
             'minimosCarreras.*' => ['nullable', 'numeric', 'between:0,100'],
         ]);
-        $minimos = collect($this->minimosCarreras)
-            ->map(fn (mixed $valor): ?float => blank($valor) ? null : (float) $valor)
-            ->all();
+        $minimos = $this->minimosConfigurados();
 
         try {
             $servicio->configurarResultados($examen, $this->configuracion->datos(), $minimos);
@@ -132,6 +135,7 @@ class extends Component
             return;
         }
 
+        $this->previsualizacion = [];
         Flux::toast(text: 'La configuración fue guardada. Debes generar nuevamente los resultados.', variant: 'success');
     }
 
@@ -160,6 +164,7 @@ class extends Component
 
         $this->observacionesImportacion = $resumen->observaciones;
         $this->archivoPadron = null;
+        $this->previsualizacion = [];
         Flux::toast(
             text: $resumen->mensaje('postulantes'),
             variant: $resumen->importado ? 'success' : 'danger',
@@ -203,6 +208,7 @@ class extends Component
 
         $this->observacionesImportacion = $observaciones;
         $this->archivosRespuestas = [];
+        $this->previsualizacion = [];
         Flux::toast(
             text: "Se importaron {$importados} respuestas. ".($observaciones === [] ? '' : count($observaciones).' observación(es) requieren revisión.'),
             variant: $observaciones === [] ? 'success' : 'warning',
@@ -210,7 +216,7 @@ class extends Component
         );
     }
 
-    public function generar(ResolverResultadosService $servicio): void
+    public function prepararGeneracion(ResolverResultadosService $servicio): void
     {
         $this->authorize(Permiso::ResultadosGenerar->value);
         $examen = $this->examen();
@@ -219,15 +225,56 @@ class extends Component
             return;
         }
 
+        $this->configuracion->validate();
+        $this->validate([
+            'minimosCarreras.*' => ['nullable', 'numeric', 'between:0,100'],
+        ]);
+
         try {
-            $this->ultimoResumen = $servicio->resolver($examen);
+            $this->previsualizacion = $servicio->previsualizar(
+                $examen,
+                $this->configuracion->datos(),
+                $this->minimosConfigurados(),
+            );
         } catch (RuntimeException $error) {
             Flux::toast(text: $error->getMessage(), variant: 'danger', duration: 10000);
 
             return;
         }
 
+        Flux::modal('confirmar-generacion')->show();
+    }
+
+    public function generar(ExamenService $examenService, ResolverResultadosService $servicio): void
+    {
+        $this->authorize(Permiso::ResultadosGenerar->value);
+        $examen = $this->examen();
+
+        if ($examen === null || $this->previsualizacion === []) {
+            return;
+        }
+
+        $this->configuracion->validate();
+        $this->validate([
+            'minimosCarreras.*' => ['nullable', 'numeric', 'between:0,100'],
+        ]);
+
+        try {
+            $examenService->configurarResultados(
+                $examen,
+                $this->configuracion->datos(),
+                $this->minimosConfigurados(),
+            );
+            $this->ultimoResumen = $servicio->resolver($examen->refresh());
+        } catch (RuntimeException $error) {
+            Flux::toast(text: $error->getMessage(), variant: 'danger', duration: 10000);
+
+            return;
+        }
+
+        $this->previsualizacion = [];
         $this->resetPage();
+        Flux::modal('confirmar-generacion')->close();
         Flux::toast(text: 'Los resultados fueron generados correctamente.', variant: 'success');
     }
 
@@ -261,6 +308,7 @@ class extends Component
         $this->postulanteAnular = '';
         $this->motivoAnulacion = '';
         $this->ultimoResumen = [];
+        $this->previsualizacion = [];
         Flux::modal('anular-postulacion')->close();
         Flux::toast(text: 'La postulación fue anulada. Debes generar nuevamente los resultados.', variant: 'success');
     }
@@ -285,6 +333,7 @@ class extends Component
         }
 
         $this->ultimoResumen = [];
+        $this->previsualizacion = [];
         Flux::toast(text: 'La postulación fue restaurada. Debes generar nuevamente los resultados.', variant: 'success');
     }
 
@@ -316,6 +365,14 @@ class extends Component
             ->whereIn('id_car', $examen->proceso->vacantes()->select('id_car'))
             ->pluck('puntaje_minimo_car', 'id_car')
             ->map(fn (mixed $valor): ?string => $valor === null ? null : (string) $valor)
+            ->all();
+    }
+
+    /** @return array<int, float|null> */
+    private function minimosConfigurados(): array
+    {
+        return collect($this->minimosCarreras)
+            ->map(fn (mixed $valor): ?float => blank($valor) ? null : (float) $valor)
             ->all();
     }
 
@@ -382,7 +439,12 @@ class extends Component
             ->orderBy('id_res')
             ->paginate(25);
         $estadisticas = [
-            'padron' => $examen->postulantes()->count(),
+            /*
+             * Solo lo que entregó el lector: al resolver, el padrón se
+             * completa con los inscritos que no se presentaron (Art. 76) y
+             * esas filas van sin cartilla.
+             */
+            'padron' => $examen->postulantes()->delLector()->count(),
             'respuestas' => $examen->postulantes()->whereHas('respuesta')->count(),
             'sin_cruce' => $examen->postulantes()->whereNull('id_ins')->count(),
             'resultados' => $examen->resultados()->count(),

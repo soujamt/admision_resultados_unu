@@ -24,7 +24,7 @@ class GenerarLecturaOptica extends ComandoDeAdmision
         {--examen= : ID de la jornada; si se omite, la última del proceso}
         {--carpeta= : Carpeta donde escribir los TXT; por defecto la del proceso}
         {--nivel=normal : Qué tan difícil salió el examen: facil, normal o dificil}
-        {--ausentes=8 : Porcentaje del padrón que no rinde y se publica como NSP}
+        {--ausentes=8 : Porcentaje de inscritos que no rinde y queda fuera de los dos TXT}
         {--intrusos=0 : Filas con documentos ajenos al proceso, para probar el rechazo}
         {--limite= : Cuántos postulantes escribir; por defecto todo el padrón}
         {--semilla= : Semilla para repetir exactamente la misma corrida}
@@ -73,7 +73,7 @@ class GenerarLecturaOptica extends ComandoDeAdmision
         $this->components->twoColumnDetail('Nivel del examen', $nivel->etiqueta());
         $this->components->twoColumnDetail('Filas del padrón', (string) $resumen->filasPadron);
         $this->components->twoColumnDetail('Tarjetas leídas', (string) $resumen->filasRespuestas);
-        $this->components->twoColumnDetail('Ausentes (NSP)', (string) $resumen->ausentes);
+        $this->components->twoColumnDetail('Inscritos que no rindieron', (string) $resumen->ausentes);
         $this->components->twoColumnDetail('Semilla', (string) $resumen->semilla);
 
         $this->newLine();

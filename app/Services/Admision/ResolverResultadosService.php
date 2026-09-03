@@ -6,6 +6,8 @@ use App\Enums\Convocatoria;
 use App\Enums\EstadoResultado;
 use App\Enums\GrupoModalidad;
 use App\Models\Examen;
+use App\Models\ExamenPostulante;
+use App\Models\Inscripcion;
 use App\Models\Resultado;
 use App\Models\Vacante;
 use Illuminate\Support\Collection;
@@ -27,16 +29,86 @@ class ResolverResultadosService
      */
     public function resolver(Examen $examen): array
     {
+        $calculo = $this->calcular($examen);
+
+        $this->guardar($examen, $calculo['datos']);
+
+        return $this->resumen($examen, $calculo['vacantes'], $calculo['datos'], $calculo['factores'] !== []);
+    }
+
+    /**
+     * Calcula una proyeccion con los valores visibles del formulario sin
+     * reemplazar la resolucion vigente ni conservar filas NSP temporales.
+     *
+     * @param  array<string, float|bool>  $configuracion
+     * @param  array<int, float|null>  $minimosCarreras
+     * @return array<string, mixed>
+     */
+    public function previsualizar(Examen $examen, array $configuracion, array $minimosCarreras): array
+    {
+        $examenCalculado = clone $examen;
+        $examenCalculado->forceFill($configuracion);
+
+        DB::beginTransaction();
+
+        try {
+            $calculo = $this->calcular($examenCalculado, $minimosCarreras);
+            $resumen = $this->resumen(
+                $examenCalculado,
+                $calculo['vacantes'],
+                $calculo['datos'],
+                $calculo['factores'] !== [],
+            );
+            $ingresantesPorCarrera = collect($calculo['datos'])
+                ->filter(fn (array $fila): bool => $fila['estado'] === EstadoResultado::Ingreso)
+                ->countBy(fn (array $fila): int => $fila['id_car']);
+            $adicionalesPorCarrera = $calculo['adicionales_empate_por_carrera'];
+            $carreras = collect($calculo['evaluacion_factores'])
+                ->map(function (array $evaluacion) use ($adicionalesPorCarrera, $ingresantesPorCarrera): array {
+                    $ingresantes = (int) $ingresantesPorCarrera->get($evaluacion['id_car'], 0);
+
+                    return $evaluacion + [
+                        'ingresantes_estimados' => $ingresantes,
+                        'desiertas_estimadas' => max(0, $evaluacion['vacantes'] - $ingresantes),
+                        'ingresantes_adicionales_empate' => (int) ($adicionalesPorCarrera[$evaluacion['id_car']] ?? 0),
+                    ];
+                })
+                ->sortBy('carrera')
+                ->values()
+                ->all();
+
+            return $resumen + [
+                'factor_habilitado' => (bool) $examenCalculado->aplicar_factor_dificultad_exa,
+                'umbral_factor' => (float) $examenCalculado->umbral_factor_dificultad_exa,
+                'puntaje_minimo' => (float) $examenCalculado->puntaje_minimo_exa,
+                'carreras_con_factor' => count($calculo['factores']),
+                'ingresantes_adicionales_empate' => array_sum($adicionalesPorCarrera),
+                'carreras' => $carreras,
+            ];
+        } finally {
+            DB::rollBack();
+        }
+    }
+
+    /**
+     * @param  array<int, float|null>  $minimosCarreras
+     * @return array{datos:array<int, array<string, mixed>>,vacantes:int,factores:array<int, float>,evaluacion_factores:array<int, array<string, mixed>>,adicionales_empate_por_carrera:array<int, int>}
+     */
+    private function calcular(Examen $examen, array $minimosCarreras = []): array
+    {
+        $examen->loadMissing('proceso');
+
+        if ($examen->postulantes()->doesntExist()) {
+            throw new RuntimeException('Importa primero el padrón de postulantes del lector óptico.');
+        }
+
+        $this->completarNoPresentados($examen);
+
         $examen->load([
-            'proceso',
             'postulantes.respuesta',
             'postulantes.inscripcion.modalidad',
             'postulantes.inscripcion.carrera',
         ]);
-
-        if ($examen->postulantes->isEmpty()) {
-            throw new RuntimeException('Importa primero el padrón de postulantes del lector óptico.');
-        }
 
         $sinInscripcion = $examen->postulantes->whereNull('id_ins')->count();
 
@@ -48,11 +120,15 @@ class ResolverResultadosService
             ->habilitada()
             ->with(['carrera', 'modalidad', 'sede'])
             ->get();
-        $datos = $this->puntajesDirectos($examen, $vacantes);
+        $datos = $this->puntajesDirectos($examen, $vacantes, $minimosCarreras);
         $ofrecidas = (int) $vacantes->sum(fn (Vacante $vacante): int => $vacante->plazas());
 
         $sinFactor = $this->adjudicar($datos, $vacantes);
-        $factores = $this->factoresPorCarrera($examen, $datos, $ofrecidas, count($sinFactor));
+        $evaluacionFactores = $this->evaluacionFactoresPorCarrera($examen, $datos, $vacantes, $sinFactor);
+        $factores = collect($evaluacionFactores)
+            ->where('aplica_factor', true)
+            ->mapWithKeys(fn (array $evaluacion): array => [$evaluacion['id_car'] => $evaluacion['factor']])
+            ->all();
 
         if ($factores !== []) {
             foreach ($datos as $id => $fila) {
@@ -66,10 +142,69 @@ class ResolverResultadosService
 
         $admitidos = $factores === [] ? $sinFactor : $this->adjudicar($datos, $vacantes);
         $datos = $this->resolverEstados($datos, $admitidos);
+        $ingresantesPorVacante = collect($datos)
+            ->filter(fn (array $fila): bool => $fila['estado'] === EstadoResultado::Ingreso)
+            ->countBy(fn (array $fila): int => $fila['id_vac']);
+        $adicionalesEmpatePorCarrera = $vacantes
+            ->groupBy('id_car')
+            ->mapWithKeys(function (Collection $vacantesCarrera, int $idCarrera) use ($ingresantesPorVacante): array {
+                $adicionales = (int) $vacantesCarrera->sum(
+                    fn (Vacante $vacante): int => max(
+                        0,
+                        (int) $ingresantesPorVacante->get($vacante->id_vac, 0) - $vacante->plazas(),
+                    ),
+                );
 
-        $this->guardar($examen, $datos);
+                return [$idCarrera => $adicionales];
+            })
+            ->all();
 
-        return $this->resumen($examen, $ofrecidas, $datos, $factores !== []);
+        return [
+            'datos' => $datos,
+            'vacantes' => $ofrecidas,
+            'factores' => $factores,
+            'evaluacion_factores' => $evaluacionFactores,
+            'adicionales_empate_por_carrera' => $adicionalesEmpatePorCarrera,
+        ];
+    }
+
+    /**
+     * Art. 76: el inscrito que no se presenta se publica como NSP, asi que el
+     * padron oficial de resultados no puede quedarse con quienes leyo el
+     * escaner. Se le abre fila a cada inscrito vigente que falta, con la
+     * cartilla en nulo, porque nunca recibio tarjeta optica.
+     *
+     * Es idempotente: solo agrega a los que no tienen fila en la jornada, y
+     * reimportar el padron las borra junto con el resto para recrearlas aqui.
+     */
+    private function completarNoPresentados(Examen $examen): void
+    {
+        $noPresentados = Inscripcion::query()
+            ->delProceso($examen->id_pro)
+            ->vigente()
+            ->whereNotIn('id_ins', $examen->postulantes()->whereNotNull('id_ins')->select('id_ins'))
+            ->with('postulante:id_pos,numero_documento_pos,primer_apellido_pos,segundo_apellido_pos,nombres_pos')
+            ->get()
+            ->filter(fn (Inscripcion $inscripcion): bool => $inscripcion->postulante !== null);
+
+        if ($noPresentados->isEmpty()) {
+            return;
+        }
+
+        $ahora = now();
+        $filas = $noPresentados->map(fn (Inscripcion $inscripcion): array => [
+            'id_exa' => $examen->id_exa,
+            'id_ins' => $inscripcion->id_ins,
+            'codigo_cartilla_exp' => null,
+            'documento_exp' => $inscripcion->postulante->numero_documento_pos,
+            'nombre_exp' => $inscripcion->postulante->nombreCompleto(),
+            'created_at' => $ahora,
+            'updated_at' => $ahora,
+        ])->all();
+
+        foreach (array_chunk($filas, 500) as $lote) {
+            ExamenPostulante::insert($lote);
+        }
     }
 
     /**
@@ -78,9 +213,10 @@ class ResolverResultadosService
      * anulado por los Arts. 79, 96 y 105 al 108 queda fuera del concurso.
      *
      * @param  Collection<int, Vacante>  $vacantes
+     * @param  array<int, float|null>  $minimosCarreras
      * @return array<int, array<string, mixed>>
      */
-    private function puntajesDirectos(Examen $examen, Collection $vacantes): array
+    private function puntajesDirectos(Examen $examen, Collection $vacantes, array $minimosCarreras = []): array
     {
         $vacantesPorClave = $vacantes->keyBy(
             fn (Vacante $vacante): string => $this->claveVacante($vacante->id_mod, $vacante->id_car, $vacante->id_sed),
@@ -113,6 +249,9 @@ class ResolverResultadosService
 
             $respuesta = $postulante->respuesta;
             $anulado = $postulante->estaAnulado();
+            $minimoCarrera = array_key_exists($inscripcion->id_car, $minimosCarreras)
+                ? $minimosCarreras[$inscripcion->id_car]
+                : $inscripcion->carrera->puntaje_minimo_car;
             $puntajeDirecto = $respuesta === null || $anulado ? null : round(
                 ($respuesta->aciertos_exr * (float) $examen->puntaje_acierto_exa)
                 + (($respuesta->errores_exr + $respuesta->dobles_exr) * (float) $examen->puntaje_error_exa)
@@ -129,7 +268,7 @@ class ResolverResultadosService
                 'puntaje_directo' => $puntajeDirecto,
                 'puntaje' => $puntajeDirecto,
                 'factor' => 1.0,
-                'minimo' => (float) ($inscripcion->carrera->puntaje_minimo_car ?? $examen->puntaje_minimo_exa),
+                'minimo' => (float) ($minimoCarrera ?? $examen->puntaje_minimo_exa),
                 'id_vac' => $vacante->id_vac,
                 'repesca' => false,
                 'estado' => match (true) {
@@ -157,39 +296,55 @@ class ResolverResultadosService
     }
 
     /**
-     * Art. 80: si el examen deja sin cubrir al menos el umbral configurado de
-     * las vacantes ofrecidas, se aplica un factor de dificultad por carrera
-     * profesional, con FDE = 1 + (100 - PME) / 100 sobre el puntaje maximo
-     * obtenido en esa carrera. Devuelve un arreglo vacio si no corresponde.
+     * Art. 80, segun la interpretacion de la Comision: si una carrera deja
+     * sin cubrir al menos el umbral configurado de sus vacantes ofrecidas, se
+     * aplica su FDE = 1 + (100 - PME) / 100. Agrupa modalidades y sedes de la
+     * carrera antes de medir tanto las plazas como los ingresos.
      *
      * @param  array<int, array<string, mixed>>  $datos
-     * @return array<int, float>
+     * @return array<int, array<string, mixed>>
      */
-    private function factoresPorCarrera(Examen $examen, array $datos, int $ofrecidas, int $cubiertas): array
+    private function evaluacionFactoresPorCarrera(Examen $examen, array $datos, Collection $vacantes, array $admitidos): array
     {
-        if (! $examen->aplicar_factor_dificultad_exa || $ofrecidas === 0) {
-            return [];
-        }
+        $cubiertasPorCarrera = collect($admitidos)->countBy(
+            fn (array $_, int $idPostulante): int => $datos[$idPostulante]['id_car'],
+        );
+        $evaluaciones = [];
 
-        $porcentajeSinCubrir = (max(0, $ofrecidas - $cubiertas) / $ofrecidas) * 100;
+        foreach ($vacantes->groupBy('id_car') as $idCarrera => $vacantesCarrera) {
+            $ofrecidas = (int) $vacantesCarrera->sum(fn (Vacante $vacante): int => $vacante->plazas());
 
-        if ($porcentajeSinCubrir < (float) $examen->umbral_factor_dificultad_exa) {
-            return [];
-        }
-
-        $factores = [];
-
-        foreach (collect($datos)->groupBy('id_car') as $idCarrera => $filas) {
-            $puntajeMaximo = $filas->pluck('puntaje_directo')->filter(fn (?float $puntaje): bool => $puntaje !== null)->max();
-
-            if ($puntajeMaximo === null || $puntajeMaximo <= 0) {
+            if ($ofrecidas === 0) {
                 continue;
             }
 
-            $factores[(int) $idCarrera] = 1 + ((100 - $puntajeMaximo) / 100);
+            $cubiertas = (int) $cubiertasPorCarrera->get($idCarrera, 0);
+            $desiertas = max(0, $ofrecidas - $cubiertas);
+            $porcentajeSinCubrir = ($desiertas / $ofrecidas) * 100;
+            $filas = collect($datos)->where('id_car', $idCarrera);
+            $puntajeMaximo = $filas->pluck('puntaje_directo')->filter(fn (?float $puntaje): bool => $puntaje !== null)->max();
+            $alcanzaUmbral = $porcentajeSinCubrir >= (float) $examen->umbral_factor_dificultad_exa;
+            $aplicaFactor = (bool) $examen->aplicar_factor_dificultad_exa
+                && $alcanzaUmbral
+                && $puntajeMaximo !== null
+                && $puntajeMaximo > 0;
+            $vacante = $vacantesCarrera->first();
+
+            $evaluaciones[(int) $idCarrera] = [
+                'id_car' => (int) $idCarrera,
+                'carrera' => $vacante->carrera->nombre_car,
+                'vacantes' => $ofrecidas,
+                'ingresantes_sin_factor' => $cubiertas,
+                'desiertas_sin_factor' => $desiertas,
+                'porcentaje_desiertas_sin_factor' => round($porcentajeSinCubrir, 2),
+                'puntaje_maximo' => $puntajeMaximo === null ? null : round((float) $puntajeMaximo, 4),
+                'alcanza_umbral' => $alcanzaUmbral,
+                'aplica_factor' => $aplicaFactor,
+                'factor' => $aplicaFactor ? 1 + ((100 - $puntajeMaximo) / 100) : 1.0,
+            ];
         }
 
-        return $factores;
+        return $evaluaciones;
     }
 
     /**

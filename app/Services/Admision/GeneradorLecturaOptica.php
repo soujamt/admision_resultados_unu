@@ -83,20 +83,22 @@ class GeneradorLecturaOptica
         }
 
         $vacantes = $this->vacantesHabilitadas($examen);
-        $filas = $this->filasDelPadron($inscripciones, $aulas, $vacantes);
-        $filas = array_merge($filas, $this->filasIntrusas($inscripciones, $intrusos, count($filas)));
 
-        $sinRendir = $this->ausentes(count($filas), max(0, min(100, $ausentes)));
+        /*
+         * El lector solo entrega lo que leyo, y entrega lo mismo en los dos
+         * archivos: una fila de padron por cada tarjeta. Quien no rinde no
+         * figura en ninguno de los dos, y es el resolutor el que lo publica
+         * como NSP a partir de su inscripcion.
+         */
+        $rinden = $this->quienesRinden($inscripciones, max(0, min(100, $ausentes)));
+        $filas = $this->filasDelPadron($rinden, $aulas, $vacantes);
+        $filas = array_merge($filas, $this->filasIntrusas($rinden, $intrusos, count($filas)));
+
         $clave = $this->clave();
-        $tarjetas = [];
-
-        foreach ($filas as $indice => $fila) {
-            if (isset($sinRendir[$indice])) {
-                continue;
-            }
-
-            $tarjetas[] = $this->tarjeta($examen, $fila['cartilla'], $clave, $nivel);
-        }
+        $tarjetas = array_map(
+            fn (array $fila): string => $this->tarjeta($examen, $fila['cartilla'], $clave, $nivel),
+            $filas,
+        );
 
         $carpeta = $carpeta === null ? $this->carpetaPorDefecto($examen) : $this->normalizar($carpeta);
         File::ensureDirectoryExists($carpeta);
@@ -110,7 +112,7 @@ class GeneradorLecturaOptica
             respuestas: $base.'_RESPUESTAS.txt',
             filasPadron: count($filas),
             filasRespuestas: count($tarjetas),
-            ausentes: count($sinRendir),
+            ausentes: $inscripciones->count() - $rinden->count(),
             intrusos: $intrusos,
             semilla: $semilla,
             advertencias: $this->advertencias($inscripciones, $aulas, $vacantes, $intrusos),
@@ -271,23 +273,28 @@ class GeneradorLecturaOptica
     }
 
     /**
-     * Quienes no rinden: no aparecen en el TXT de respuestas y el Art. 76 los
-     * publica como NSP.
+     * Quienes rinden, conservando el orden del padron. El resto no se escribe
+     * en ningun archivo: no rindieron, asi que el lector nunca los vio, y el
+     * Art. 76 los publica como NSP desde su inscripcion.
      *
-     * @return array<int, true>
+     * @param  Collection<int, Inscripcion>  $inscripciones
+     * @return Collection<int, Inscripcion>
      */
-    private function ausentes(int $filas, int $porcentaje): array
+    private function quienesRinden(Collection $inscripciones, int $porcentaje): Collection
     {
-        $cuantos = (int) round($filas * $porcentaje / 100);
+        $cuantos = (int) round($inscripciones->count() * $porcentaje / 100);
 
         if ($cuantos < 1) {
-            return [];
+            return $inscripciones;
         }
 
-        $indices = range(0, $filas - 1);
+        $indices = range(0, $inscripciones->count() - 1);
         shuffle($indices);
+        $ausentes = array_fill_keys(array_slice($indices, 0, $cuantos), true);
 
-        return array_fill_keys(array_slice($indices, 0, $cuantos), true);
+        return $inscripciones
+            ->reject(fn (Inscripcion $inscripcion, int $indice): bool => isset($ausentes[$indice]))
+            ->values();
     }
 
     /**
