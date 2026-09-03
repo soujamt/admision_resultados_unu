@@ -4,6 +4,12 @@
         bajada="Define la capacidad y el área de cada aula antes de sortear las ubicaciones."
     >
         <x-slot:acciones>
+            @if ($examen)
+                <flux:button :href="route('resultados.padron', $examen)" icon="document-arrow-down" variant="filled">
+                    Padrón general
+                </flux:button>
+            @endif
+
             @can(App\Enums\Permiso::ResultadosConfigurarAulas->value)
                 <flux:button wire:click="nuevoExamen" variant="primary" icon="plus">Nueva jornada</flux:button>
             @endcan
@@ -169,15 +175,6 @@
 
                         <flux:table.cell align="end">
                             <div class="flex justify-end gap-1">
-                                <flux:button
-                                    :href="route('resultados.aulas.padron', $fila)"
-                                    size="sm"
-                                    variant="subtle"
-                                    icon="document-arrow-down"
-                                >
-                                    PDF
-                                </flux:button>
-
                                 @can(App\Enums\Permiso::ResultadosConfigurarAulas->value)
                                     <x-tabla.accion
                                         wire:click="retirarAula({{ $fila->id_eau }})"
