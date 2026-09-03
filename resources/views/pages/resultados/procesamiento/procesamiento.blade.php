@@ -100,7 +100,7 @@
             </flux:callout>
         @endif
 
-        <div class="grid gap-6 xl:grid-cols-2">
+        <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
             @can(App\Enums\Permiso::ResultadosImportar->value)
                 <flux:card class="space-y-5">
                     <div>
@@ -152,66 +152,103 @@
                         <flux:text class="mt-1">Valores iniciales del reglamento: +1 acierto, −0.01 error/doble, +0.1 blanco y mínimo 50.</flux:text>
                     </div>
 
-                    <form wire:submit="guardarConfiguracion" class="space-y-4">
-                        <div class="grid gap-4 sm:grid-cols-3">
-                            <flux:input wire:model="configuracion.puntajeAcierto" type="number" step="0.001" label="Por acierto" />
-                            <flux:input wire:model="configuracion.puntajeError" type="number" step="0.001" label="Por error/doble" />
-                            <flux:input wire:model="configuracion.puntajeBlanco" type="number" step="0.001" label="Por blanco" />
-                            <flux:input wire:model="configuracion.puntajeMinimo" type="number" step="0.0001" min="0" max="100" label="Mínimo general" />
-                            <flux:input wire:model="configuracion.umbralFactor" type="number" step="0.01" min="0" max="100" label="Umbral de desiertas (%)" />
-                            <div class="flex items-end pb-2">
-                                <flux:switch wire:model="configuracion.aplicarFactor" label="Aplicar factor de dificultad" />
+                    <form wire:submit="guardarConfiguracion" class="space-y-5">
+                        <div class="space-y-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
+                            <div>
+                                <flux:heading size="sm">Puntaje por respuesta</flux:heading>
+                                <flux:text class="mt-1 text-xs">Valores aplicados a cada pregunta durante el cálculo.</flux:text>
+                            </div>
+
+                            <div class="grid gap-4 sm:grid-cols-3">
+                                <flux:input wire:model="configuracion.puntajeAcierto" type="number" step="0.001" label="Acierto" />
+                                <flux:input wire:model="configuracion.puntajeError" type="number" step="0.001" label="Error o doble marca" />
+                                <flux:input wire:model="configuracion.puntajeBlanco" type="number" step="0.001" label="En blanco" />
                             </div>
                         </div>
 
-                        <div class="max-h-64 overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
-                            <table class="w-full text-sm">
-                                <thead class="sticky top-0 bg-zinc-100 text-left dark:bg-zinc-800">
-                                    <tr>
-                                        <th class="px-3 py-2">Carrera profesional</th>
-                                        <th class="w-24 px-3 py-2">Vacantes</th>
-                                        <th class="w-44 px-3 py-2">Mínimo Art. 81</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
-                                    @foreach ($carreras as $grupo)
-                                        <tr wire:key="minimo-carrera-{{ $grupo['carrera']->id_car }}">
-                                            <td class="px-3 py-2">
-                                                <div class="font-medium">{{ $grupo['carrera']->nombre_car }}</div>
-                                                <div class="text-xs text-zinc-500">
-                                                    @foreach ($grupo['vacantes'] as $vacante)
-                                                        {{ $vacante->modalidad->nombre_mod }} · {{ $vacante->sede->abreviatura() }} ({{ $vacante->cantidad_vac }}@if ($vacante->cantidad_arrastre_vac > 0)<span title="Arrastre de los Arts. 17, 18 y 19"> + {{ $vacante->cantidad_arrastre_vac }}</span>@endif)@if (! $loop->last) · @endif
-                                                    @endforeach
-                                                </div>
-                                                @if ($examen->resuelto_en_exa)
-                                                    <div class="text-xs text-zinc-500">
-                                                        {{ $grupo['ingresantes'] }} ingresante(s) ·
-                                                        {{ max(0, $grupo['ofrecidas'] - $grupo['ingresantes']) }} desierta(s)
-                                                    </div>
-                                                @endif
-                                            </td>
-                                            <td class="px-3 py-2">{{ $grupo['ofrecidas'] }}</td>
-                                            <td class="px-3 py-2">
-                                                <div class="flex items-center gap-1">
-                                                    <flux:input wire:model="minimosCarreras.{{ $grupo['carrera']->id_car }}" type="number" step="0.01" min="0" max="100" placeholder="Usar general" />
-                                                    @if ($estadisticas['resultados'] > 0)
-                                                        <flux:button
-                                                            :href="route('resultados.pdf', ['examen' => $examen, 'carrera' => $grupo['carrera']->id_car])"
-                                                            icon="document-arrow-down"
-                                                            variant="subtle"
-                                                            square
-                                                            tooltip="PDF de esta carrera"
-                                                        />
-                                                    @endif
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="space-y-4 rounded-xl bg-zinc-50 p-4 ring-1 ring-zinc-200 dark:bg-zinc-800/50 dark:ring-zinc-700">
+                                <div>
+                                    <flux:heading size="sm">Puntaje mínimo general</flux:heading>
+                                    <flux:text class="mt-1 text-xs">Se aplica cuando una carrera no tiene una excepción del Art. 81.</flux:text>
+                                </div>
+
+                                <flux:input wire:model="configuracion.puntajeMinimo" type="number" step="0.0001" min="0" max="100" label="Puntaje mínimo" />
+                            </div>
+
+                            <div class="space-y-4 rounded-xl bg-zinc-50 p-4 ring-1 ring-zinc-200 dark:bg-zinc-800/50 dark:ring-zinc-700">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <flux:heading size="sm">Factor de dificultad</flux:heading>
+                                        <flux:text class="mt-1 text-xs">El umbral del Art. 80 se evalúa por carrera profesional.</flux:text>
+                                    </div>
+                                    <flux:switch wire:model="configuracion.aplicarFactor" aria-label="Aplicar factor de dificultad" />
+                                </div>
+
+                                <flux:input wire:model="configuracion.umbralFactor" type="number" step="0.01" min="0" max="100" label="Vacantes desiertas (%)" />
+                            </div>
                         </div>
 
-                        <div class="flex justify-end">
+                        <div class="space-y-3">
+                            <div class="flex flex-wrap items-end justify-between gap-3">
+                                <div>
+                                    <flux:heading size="sm">Excepciones por carrera</flux:heading>
+                                    <flux:text class="mt-1 text-xs">Define únicamente los puntajes mínimos distintos al general.</flux:text>
+                                </div>
+                                <flux:badge size="sm">{{ $carreras->count() }} carrera(s)</flux:badge>
+                            </div>
+
+                            <div class="max-h-80 overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+                                <table class="w-full min-w-[36rem] text-sm">
+                                    <thead class="sticky top-0 z-10 bg-zinc-100 text-left dark:bg-zinc-800">
+                                        <tr>
+                                            <th class="px-4 py-3 font-medium">Carrera profesional</th>
+                                            <th class="w-24 px-3 py-3 text-center font-medium">Vacantes</th>
+                                            <th class="w-44 px-4 py-3 font-medium">Mínimo Art. 81</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                                        @foreach ($carreras as $grupo)
+                                            <tr wire:key="minimo-carrera-{{ $grupo['carrera']->id_car }}" class="align-top">
+                                                <td class="px-4 py-3">
+                                                    <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $grupo['carrera']->nombre_car }}</div>
+                                                    <div class="mt-1 text-xs leading-5 text-zinc-500">
+                                                        @foreach ($grupo['vacantes'] as $vacante)
+                                                            {{ $vacante->modalidad->nombre_mod }} · {{ $vacante->sede->abreviatura() }} ({{ $vacante->cantidad_vac }}@if ($vacante->cantidad_arrastre_vac > 0)<span title="Arrastre de los Arts. 17, 18 y 19"> + {{ $vacante->cantidad_arrastre_vac }}</span>@endif)@if (! $loop->last) · @endif
+                                                        @endforeach
+                                                    </div>
+                                                    @if ($examen->resuelto_en_exa)
+                                                        <div class="mt-1 text-xs text-zinc-500">
+                                                            {{ $grupo['ingresantes'] }} ingresante(s) ·
+                                                            {{ max(0, $grupo['ofrecidas'] - $grupo['ingresantes']) }} desierta(s)
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                                <td class="px-3 py-3 text-center">
+                                                    <flux:badge size="sm">{{ $grupo['ofrecidas'] }}</flux:badge>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <flux:input wire:model="minimosCarreras.{{ $grupo['carrera']->id_car }}" type="number" step="0.01" min="0" max="100" placeholder="Usar general" />
+                                                        @if ($estadisticas['resultados'] > 0)
+                                                            <flux:button
+                                                                :href="route('resultados.pdf', ['examen' => $examen, 'carrera' => $grupo['carrera']->id_car])"
+                                                                icon="document-arrow-down"
+                                                                variant="subtle"
+                                                                square
+                                                                tooltip="PDF de esta carrera"
+                                                            />
+                                                        @endif
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end border-t border-zinc-200 pt-5 dark:border-zinc-700">
                             <flux:button type="submit" icon="check" variant="primary">Guardar configuración</flux:button>
                         </div>
                     </form>
@@ -234,8 +271,7 @@
 
                 @can(App\Enums\Permiso::ResultadosGenerar->value)
                     <flux:button
-                        wire:click="generar"
-                        wire:confirm="¿Generar nuevamente los resultados? La resolución anterior de esta jornada será reemplazada."
+                        wire:click="prepararGeneracion"
                         icon="calculator"
                         variant="primary"
                         :disabled="$estadisticas['padron'] === 0 || $estadisticas['sin_cruce'] > 0"
@@ -324,6 +360,163 @@
                 <x-tabla.vacia :columnas="6" mensaje="Todavía no hay resultados generados para esta jornada." icono="chart-bar" />
             @endif
         </flux:card>
+
+        @can(App\Enums\Permiso::ResultadosGenerar->value)
+            <flux:modal name="confirmar-generacion" class="w-full md:max-w-4xl">
+                @if ($previsualizacion !== [])
+                    <div class="space-y-6">
+                        <div>
+                            <flux:heading size="xl">Vista previa de la generación</flux:heading>
+                            <flux:text class="mt-2">
+                                Revisa la proyección antes de reemplazar los resultados de esta jornada.
+                            </flux:text>
+                        </div>
+
+                        @if (! $previsualizacion['factor_habilitado'])
+                            <flux:callout icon="information-circle" variant="secondary">
+                                <flux:callout.heading>El factor de dificultad está desactivado</flux:callout.heading>
+                                <flux:callout.text>Todos los postulantes conservarán un FDE de 1.000000.</flux:callout.text>
+                            </flux:callout>
+                        @elseif ($previsualizacion['factor_aplicado'])
+                            <flux:callout icon="check-circle" variant="success">
+                                <flux:callout.heading>Se aplicará el factor de dificultad</flux:callout.heading>
+                                <flux:callout.text>
+                                    {{ $previsualizacion['carreras_con_factor'] }} carrera(s) alcanzan el umbral de
+                                    {{ number_format($previsualizacion['umbral_factor'], 2) }}% de vacantes desiertas.
+                                </flux:callout.text>
+                            </flux:callout>
+                        @else
+                            <flux:callout icon="information-circle" variant="secondary">
+                                <flux:callout.heading>No se aplicará el factor de dificultad</flux:callout.heading>
+                                <flux:callout.text>
+                                    Ninguna carrera cumple todas las condiciones del Art. 80 con el umbral de
+                                    {{ number_format($previsualizacion['umbral_factor'], 2) }}%.
+                                </flux:callout.text>
+                            </flux:callout>
+                        @endif
+
+                        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                            <div class="rounded-xl bg-zinc-50 p-4 ring-1 ring-zinc-200 dark:bg-zinc-800/50 dark:ring-zinc-700">
+                                <div class="text-xs font-medium uppercase tracking-wide text-zinc-500">Postulantes</div>
+                                <div class="mt-1 text-2xl font-semibold">{{ $previsualizacion['postulantes'] }}</div>
+                            </div>
+                            <div class="rounded-xl bg-zinc-50 p-4 ring-1 ring-zinc-200 dark:bg-zinc-800/50 dark:ring-zinc-700">
+                                <div class="text-xs font-medium uppercase tracking-wide text-zinc-500">Vacantes</div>
+                                <div class="mt-1 text-2xl font-semibold">{{ $previsualizacion['vacantes'] }}</div>
+                            </div>
+                            <div class="rounded-xl bg-green-50 p-4 ring-1 ring-green-200 dark:bg-green-950/30 dark:ring-green-800">
+                                <div class="text-xs font-medium uppercase tracking-wide text-green-700 dark:text-green-300">Ingresantes estimados</div>
+                                <div class="mt-1 text-2xl font-semibold text-green-800 dark:text-green-200">{{ $previsualizacion['ingresantes'] }}</div>
+                                @if ($previsualizacion['ingresantes_adicionales_empate'] > 0)
+                                    <div class="text-xs text-green-700 dark:text-green-300">
+                                        +{{ $previsualizacion['ingresantes_adicionales_empate'] }} por empate (Art. 85)
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="rounded-xl bg-amber-50 p-4 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:ring-amber-800">
+                                <div class="text-xs font-medium uppercase tracking-wide text-amber-700 dark:text-amber-300">Desiertas estimadas</div>
+                                <div class="mt-1 text-2xl font-semibold text-amber-800 dark:text-amber-200">{{ $previsualizacion['desiertas'] }}</div>
+                                <div class="text-xs text-amber-700 dark:text-amber-300">{{ number_format($previsualizacion['porcentaje_desiertas'], 2) }}%</div>
+                            </div>
+                        </div>
+
+                        @if ($previsualizacion['ingresantes_adicionales_empate'] > 0)
+                            <flux:callout icon="information-circle" variant="warning">
+                                <flux:callout.heading>Se detectó empate en el último puesto (Art. 85)</flux:callout.heading>
+                                <flux:callout.text>
+                                    Hay {{ $previsualizacion['ingresantes_adicionales_empate'] }} ingreso(s) adicional(es) por empate.
+                                    Por eso se proyectan {{ $previsualizacion['ingresantes'] }} ingresantes para
+                                    {{ $previsualizacion['vacantes'] }} vacantes. El reglamento dispone admitir a todos los empatados.
+                                </flux:callout.text>
+                            </flux:callout>
+                        @endif
+
+                        <div class="space-y-3">
+                            <div>
+                                <flux:heading size="lg">Evaluación del Art. 80 por carrera</flux:heading>
+                                <flux:text class="mt-1 text-xs">
+                                    “Sin factor” determina si alcanza el umbral; “Proyección final” muestra el resultado después del FDE.
+                                </flux:text>
+                            </div>
+
+                            <div class="max-h-80 overflow-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
+                                <table class="w-full min-w-[46rem] text-sm">
+                                    <thead class="sticky top-0 z-10 bg-zinc-100 text-left dark:bg-zinc-800">
+                                        <tr>
+                                            <th class="px-4 py-3 font-medium">Carrera profesional</th>
+                                            <th class="w-40 px-4 py-3 font-medium">Sin factor</th>
+                                            <th class="w-44 px-4 py-3 font-medium">Decisión Art. 80</th>
+                                            <th class="w-40 px-4 py-3 font-medium">Proyección final</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                                        @foreach ($previsualizacion['carreras'] as $carrera)
+                                            <tr wire:key="vista-previa-carrera-{{ $carrera['id_car'] }}" class="align-top">
+                                                <td class="px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">{{ $carrera['carrera'] }}</td>
+                                                <td class="px-4 py-3">
+                                                    <div>{{ $carrera['ingresantes_sin_factor'] }} ingreso(s)</div>
+                                                    <div class="mt-1 text-xs text-zinc-500">
+                                                        {{ $carrera['desiertas_sin_factor'] }} de {{ $carrera['vacantes'] }} desiertas
+                                                        ({{ number_format($carrera['porcentaje_desiertas_sin_factor'], 2) }}%)
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    @if (! $previsualizacion['factor_habilitado'])
+                                                        <flux:badge size="sm">Desactivado</flux:badge>
+                                                    @elseif ($carrera['aplica_factor'])
+                                                        <flux:badge size="sm" color="green">Sí · FDE {{ number_format($carrera['factor'], 6) }}</flux:badge>
+                                                    @elseif (! $carrera['alcanza_umbral'])
+                                                        <flux:badge size="sm">No alcanza el umbral</flux:badge>
+                                                    @else
+                                                        <flux:badge size="sm" color="amber">Sin puntaje máximo válido</flux:badge>
+                                                    @endif
+                                                    <div class="mt-1 text-xs text-zinc-500">
+                                                        PME: {{ $carrera['puntaje_maximo'] === null ? '—' : number_format($carrera['puntaje_maximo'], 4) }}
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <div>{{ $carrera['ingresantes_estimados'] }} ingreso(s)</div>
+                                                    <div class="mt-1 text-xs text-zinc-500">{{ $carrera['desiertas_estimadas'] }} desierta(s)</div>
+                                                    @if ($carrera['ingresantes_adicionales_empate'] > 0)
+                                                        <div class="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">
+                                                            +{{ $carrera['ingresantes_adicionales_empate'] }} por empate (Art. 85)
+                                                        </div>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-zinc-200 p-4 text-sm dark:border-zinc-700">
+                            <div class="font-medium">Configuración usada en esta proyección</div>
+                            <div class="mt-1 text-zinc-500">
+                                Mínimo general: {{ number_format($previsualizacion['puntaje_minimo'], 4) }} ·
+                                Umbral del Art. 80: {{ number_format($previsualizacion['umbral_factor'], 2) }}% ·
+                                Factor: {{ $previsualizacion['factor_habilitado'] ? 'habilitado' : 'desactivado' }}
+                            </div>
+                        </div>
+
+                        @if ($examen->resuelto_en_exa)
+                            <flux:callout icon="exclamation-triangle" variant="warning">
+                                <flux:callout.text>Al confirmar se reemplazará la resolución generada anteriormente.</flux:callout.text>
+                            </flux:callout>
+                        @endif
+
+                        <div class="flex justify-end gap-2">
+                            <flux:modal.close>
+                                <flux:button variant="ghost">Volver a revisar</flux:button>
+                            </flux:modal.close>
+                            <flux:button wire:click="generar" wire:loading.attr="disabled" wire:target="generar" variant="primary" icon="calculator">
+                                Confirmar y generar resultados
+                            </flux:button>
+                        </div>
+                    </div>
+                @endif
+            </flux:modal>
+        @endcan
 
         @can(App\Enums\Permiso::ResultadosAnular->value)
             <flux:modal name="anular-postulacion" class="md:w-96">
