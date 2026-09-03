@@ -175,6 +175,16 @@
 
                         <flux:table.cell align="end">
                             <div class="flex justify-end gap-1">
+                                <flux:button
+                                    :href="route('resultados.aulas.asistencia', $fila)"
+                                    size="sm"
+                                    variant="subtle"
+                                    icon="clipboard-document-check"
+                                    tooltip="Lista de asistencia del aula"
+                                >
+                                    Asistencia
+                                </flux:button>
+
                                 @can(App\Enums\Permiso::ResultadosConfigurarAulas->value)
                                     <x-tabla.accion
                                         wire:click="retirarAula({{ $fila->id_eau }})"

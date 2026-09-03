@@ -16,6 +16,7 @@
         "livewire/flux": "^2.18",
         "livewire/livewire": "^4.4",
         "maatwebsite/excel": "^4.0",
+        "picqer/php-barcode-generator": "^3.3",
         "vinkla/hashids": "^14.0"
     },
     "require-dev": {
