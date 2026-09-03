@@ -72,15 +72,26 @@ it('lista solo la carrera pedida, en su orden de mérito', function () {
         ->and($datos['tituloListado'])->toBe('Por carrera profesional');
 });
 
-it('el listado general incluye a todas las carreras y a los NSP al final', function () {
+it('el listado general separa las carreras y conserva los NSP en su carrera', function () {
     $escenario = jornadaParaExportar();
 
     $datos = app(PadronResultadosPdf::class)->datos($escenario['examen']);
+    $seccionDificil = $datos['secciones']->first(
+        fn (array $seccion) => $seccion['resultados']->first()->postulante->inscripcion->id_car === $escenario['dificil']->id_car,
+    );
+    $seccionFacil = $datos['secciones']->first(
+        fn (array $seccion) => $seccion['resultados']->first()->postulante->inscripcion->id_car === $escenario['facil']->id_car,
+    );
+    $documento = app(PadronResultadosPdf::class)->documento($escenario['examen']);
+    $documento->render();
 
     expect($datos['resultados']->count())->toBe(5)
-        ->and($datos['resultados']->last()->orden_general_res)->toBeNull()
+        ->and($datos['secciones'])->toHaveCount(2)
+        ->and($seccionDificil['resultados']->pluck('orden_carrera_res')->all())->toBe([1, 2, 3])
+        ->and($seccionFacil['resultados']->last()->orden_general_res)->toBeNull()
+        ->and($documento->getDomPDF()->getCanvas()->get_page_count())->toBe(2)
         ->and($datos['esPorCarrera'])->toBeFalse()
-        ->and($datos['tituloListado'])->toBe('Resultado general');
+        ->and($datos['tituloListado'])->toBe('Por carrera profesional');
 });
 
 it('exporta el pdf de una sola carrera', function () {

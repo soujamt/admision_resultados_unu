@@ -89,18 +89,63 @@ class PadronResultadosPdf
         }
 
         $sedes = $resultados->pluck('postulante.inscripcion.sede')->filter()->unique('id_sed');
+        $esGeneral = ! $esPorCarrera;
 
         return [
             'examen' => $examen,
             'resultados' => $resultados,
             'esPorCarrera' => $esPorCarrera,
-            'tituloListado' => $esPorCarrera ? 'Por carrera profesional' : 'Resultado general',
+            'tituloListado' => 'Por carrera profesional',
             'modalidades' => $resultados->pluck('postulante.inscripcion.modalidad.nombre_mod')
                 ->filter()
                 ->unique()
                 ->sort(SORT_NATURAL | SORT_FLAG_CASE)
                 ->implode(' / '),
             'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
+            'secciones' => $esGeneral
+                ? $this->seccionesPorCarrera($resultados)
+                : collect([[
+                    'resultados' => $resultados,
+                    'modalidades' => $resultados->pluck('postulante.inscripcion.modalidad.nombre_mod')
+                        ->filter()
+                        ->unique()
+                        ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+                        ->implode(' / '),
+                    'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
+                ]]),
         ];
+    }
+
+    /**
+     * @param  Collection<int, Resultado>  $resultados
+     * @return Collection<int, array{resultados: Collection<int, Resultado>, modalidades: string, ubicacion: string}>
+     */
+    private function seccionesPorCarrera(Collection $resultados): Collection
+    {
+        return $resultados
+            ->groupBy('postulante.inscripcion.id_car')
+            ->map(function (Collection $resultados): array {
+                $ordenados = $resultados
+                    ->sortBy(fn (Resultado $resultado) => sprintf(
+                        '%010d-%010d-%010d',
+                        $resultado->orden_carrera_res ?? PHP_INT_MAX,
+                        $resultado->orden_general_res ?? PHP_INT_MAX,
+                        $resultado->id_res,
+                    ))
+                    ->values();
+                $sedes = $ordenados->pluck('postulante.inscripcion.sede')->filter()->unique('id_sed');
+
+                return [
+                    'resultados' => $ordenados,
+                    'modalidades' => $ordenados->pluck('postulante.inscripcion.modalidad.nombre_mod')
+                        ->filter()
+                        ->unique()
+                        ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+                        ->implode(' / '),
+                    'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
+                ];
+            })
+            ->sortBy(fn (array $seccion) => $seccion['resultados']->first()->postulante->inscripcion->carrera->nombre_car, SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
     }
 }

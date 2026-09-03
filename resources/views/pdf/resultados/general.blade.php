@@ -23,53 +23,64 @@
             .carrera { width: 29%; }
             .puntaje { text-align: right; width: 9%; }
             .estado { text-align: center; width: 9%; }
-            .pie { bottom: -9mm; color: #555; font-size: 7px; left: 0; position: fixed; right: 0; text-align: center; }
+            .pie { border-top: 1px solid #555; bottom: -5mm; color: #555; font-size: 7px; height: 8mm; left: 0; padding-top: 1mm; position: fixed; right: 0; }
+            .leyenda { line-height: 1.25; }
+            .paginacion { left: 0; position: absolute; right: 0; text-align: center; top: 1mm; }
             .pagina::after { content: counter(page); }
         </style>
     </head>
     <body>
-        <header class="cabecera">
-            <img class="isologo" src="{{ public_path('img/isologo-unu.png') }}" alt="Isologo de la Universidad Nacional de Ucayali">
-            <div class="institucion">UNIVERSIDAD NACIONAL DE UCAYALI</div>
-            <div class="linea">VICERRECTORADO ACADÉMICO</div>
-            <div class="linea">DIRECCIÓN DE ADMISIÓN</div>
-            <div class="linea">{{ $examen->proceso->tituloConvocatoria() }}</div>
-            <div class="linea">{{ mb_strtoupper($modalidades ?: $examen->nombre_exa) }}</div>
-            <div class="linea">{{ $ubicacion }}</div>
-        </header>
+        @foreach ($secciones as $seccion)
+            <section class="seccion" @if (! $loop->last) style="page-break-after: always;" @endif>
+                <header class="cabecera">
+                    <img class="isologo" src="{{ public_path('img/isologo-unu.png') }}" alt="Isologo de la Universidad Nacional de Ucayali">
+                    <div class="institucion">UNIVERSIDAD NACIONAL DE UCAYALI</div>
+                    <div class="linea">VICERRECTORADO ACADÉMICO</div>
+                    <div class="linea">DIRECCIÓN DE ADMISIÓN</div>
+                    <div class="linea">{{ $examen->proceso->tituloConvocatoria() }}</div>
+                    <div class="linea">{{ mb_strtoupper($seccion['modalidades'] ?: $examen->nombre_exa) }}</div>
+                    <div class="linea">{{ $seccion['ubicacion'] }}</div>
+                </header>
 
-        <div class="titulo">{{ $tituloListado }}</div>
-        <div class="fecha">{{ mb_convert_case($ubicacion, MB_CASE_TITLE, 'UTF-8') }}, {{ ($examen->fecha_exa ?? now())->translatedFormat('d \d\e F \d\e Y') }}</div>
+                <div class="titulo">{{ $tituloListado }}</div>
+                <div class="fecha">{{ mb_convert_case($seccion['ubicacion'], MB_CASE_TITLE, 'UTF-8') }}, {{ ($examen->fecha_exa ?? now())->translatedFormat('d \d\e F \d\e Y') }}</div>
 
-        <table class="listado">
-            <thead>
-                <tr>
-                    <th class="numero">N°</th>
-                    <th class="orden">Orden general</th>
-                    <th class="documento">Código examen</th>
-                    <th class="postulante">Apellidos y nombres</th>
-                    <th class="carrera">Carrera profesional</th>
-                    <th class="puntaje">Puntaje total</th>
-                    <th class="estado">Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($resultados as $indice => $resultado)
-                    <tr>
-                        <td class="numero">{{ $esPorCarrera ? ($resultado->orden_carrera_res ?? '—') : $indice + 1 }}</td>
-                        <td class="orden">{{ $resultado->orden_general_res ?? '—' }}</td>
-                        <td class="documento">{{ $resultado->postulante->documento_exp }}</td>
-                        <td class="postulante">{{ $resultado->postulante->nombre_exp }}</td>
-                        <td class="carrera">{{ $resultado->postulante->inscripcion->sede->abreviatura() }} - {{ $resultado->postulante->inscripcion->carrera->nombre_car }}</td>
-                        <td class="puntaje">{{ $resultado->puntaje_res === null ? '—' : number_format((float) $resultado->puntaje_res, 4) }}</td>
-                        <td class="estado">{{ mb_strtoupper($resultado->estado_res->etiqueta()) }}</td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+                <table class="listado">
+                    <thead>
+                        <tr>
+                            <th class="numero">N°</th>
+                            <th class="orden">Orden general</th>
+                            <th class="documento">Código examen</th>
+                            <th class="postulante">Apellidos y nombres</th>
+                            <th class="carrera">Carrera profesional</th>
+                            <th class="puntaje">Puntaje total</th>
+                            <th class="estado">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($seccion['resultados'] as $indice => $resultado)
+                            <tr>
+                                <td class="numero">{{ $esPorCarrera ? ($resultado->orden_carrera_res ?? '—') : $indice + 1 }}</td>
+                                <td class="orden">{{ $resultado->orden_general_res ?? '—' }}</td>
+                                <td class="documento">{{ $resultado->postulante->documento_exp }}</td>
+                                <td class="postulante">{{ $resultado->postulante->nombre_exp }}</td>
+                                <td class="carrera">{{ $resultado->postulante->inscripcion->sede->abreviatura() }} - {{ $resultado->postulante->inscripcion->carrera->nombre_car }}</td>
+                                <td class="puntaje">{{ $resultado->puntaje_res === null ? '—' : number_format((float) $resultado->puntaje_res, 4) }}</td>
+                                <td class="estado">{{ mb_strtoupper($resultado->estado_res->etiqueta()) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </section>
+        @endforeach
 
         <footer class="pie">
-            RGA =&gt; REGLAMENTO GENERAL DE ADMISIÓN DE PREGRADO · NSP =&gt; NO SE PRESENTÓ · ANULADO =&gt; ART. 96 RGA · Página <span class="pagina"></span>
+            <div class="leyenda">
+                <div>RGA =&gt; REGLAMENTO GENERAL DE ADMISIÓN DE PREGRADO</div>
+                <div>NSP =&gt; NO SE PRESENTÓ</div>
+                <div>SCP-C =&gt; SEDE CORONEL PORTILLO - CALLERÍA</div>
+            </div>
+            <div class="paginacion">Página <span class="pagina"></span></div>
         </footer>
     </body>
 </html>
