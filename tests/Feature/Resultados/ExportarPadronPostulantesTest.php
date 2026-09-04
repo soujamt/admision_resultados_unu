@@ -104,19 +104,20 @@ it('arma la cabecera y las columnas del formato oficial', function () {
     $datos = app(PadronPostulantesPdf::class)->datos($escenario['examen']);
     $html = view('pdf.padron-postulantes', $datos)->render();
 
-    expect($datos['modalidadCabecera'])->toBe('Exoneración - CEPREUNU')
-        ->and($datos['ubicacion'])->toBe('PUCALLPA');
+    expect($datos['ubicacion'])->toBe('PUCALLPA');
 
     expect($html)->toContain(
         'UNIVERSIDAD NACIONAL DE UCAYALI',
         'VICERRECTORADO ACADÉMICO',
         'DIRECCIÓN DE ADMISIÓN',
-        '2027 - PRIMERA CONVOCATORIA',
-        'EXONERACIÓN - CEPREUNU',
-        'PUCALLPA',
+        'COMISIÓN CENTRAL DE ADMISIÓN',
+        '2027 - PRIMERA CONVOCATORIA - PUCALLPA',
         'Padrón general de postulantes',
         'isologo-unu.png',
     );
+
+    /* El padrón general no lleva modalidad: las abarca todas. */
+    expect($html)->not->toContain('EXONERACIÓN - CEPREUNU');
 
     /* Las cinco columnas del formato, en orden y sin la de documento. */
     expect($html)->toMatch('/N°<\/th>\s*<th class="col-codigo">Código<\/th>\s*<th class="col-postulante">Apellidos y nombres<\/th>\s*<th class="col-carrera">Carrera profesional<\/th>\s*<th class="col-pabellon">Pabellón<\/th>\s*<th class="col-aula">Aula<\/th>\s*<th class="col-carpeta">Carpeta<\/th>/');

@@ -93,13 +93,32 @@ it('arma la tarjeta con el área de la carrera y el código de barras del docume
     expect($datos['total'])->toBe(2)
         ->and($datos['tituloProceso'])->toBe('PROCESO DE ADMISIÓN 2027 - PRIMERA CONVOCATORIA')
         ->and($datos['ubicacion'])->toBe('PUCALLPA')
-        /* Alfabético: ÁLVAREZ va primero pese a la tilde. */
-        ->and($primera['nombre'])->toBe('ÁLVAREZ PISCO, ANA')
+        /* Manda la carpeta, no el apellido: VENTOCILLA ocupa la 1. */
+        ->and($primera['nombre'])->toBe('VENTOCILLA PISCO, WILLIAMS')
+        ->and($primera['carpeta'])->toBe(1)
         ->and($primera['numero'])->toBe(1)
-        ->and($primera['procedencia'])->toBe('AREA 1: SCP-C - INGENIERÍA AMBIENTAL')
-        ->and($primera['documento'])->toBe('61488571')
+        ->and($primera['procedencia'])->toBe('AREA 5: SCP-C - DERECHO')
+        ->and($primera['documento'])->toBe('61488570')
         ->and($primera['foto'])->toBeNull()
         ->and($primera['barras'])->toStartWith('data:image/png;base64,');
+});
+
+it('ordena las tarjetas por carpeta, no por apellido', function () {
+    $aulaExamen = aulaConAsistencia([
+        ['apellido' => 'ÁLVAREZ', 'nombres' => 'ANA', 'area' => 5, 'carrera' => 'Derecho', 'asiento' => 30],
+        ['apellido' => 'ZÚÑIGA', 'nombres' => 'ZOILA', 'area' => 5, 'carrera' => 'Educación Inicial', 'asiento' => 2],
+        ['apellido' => 'BENITES', 'nombres' => 'BRUNO', 'area' => 5, 'carrera' => 'Enfermería', 'asiento' => 11],
+    ]);
+
+    $tarjetas = collect(app(ListaAsistenciaPdf::class)->datos($aulaExamen)['paginas'][0])
+        ->pluck('izquierda');
+
+    expect($tarjetas->pluck('carpeta')->all())->toBe([2, 11, 30])
+        ->and($tarjetas->pluck('nombre')->all())->toBe([
+            'ZÚÑIGA PISCO, ZOILA',
+            'BENITES PISCO, BRUNO',
+            'ÁLVAREZ PISCO, ANA',
+        ]);
 });
 
 it('el código de barras codifica el documento y se puede volver a leer', function () {

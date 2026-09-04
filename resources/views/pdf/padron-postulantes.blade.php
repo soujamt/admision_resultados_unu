@@ -38,9 +38,12 @@
             <div class="institucion">UNIVERSIDAD NACIONAL DE UCAYALI</div>
             <div class="linea-cabecera">VICERRECTORADO ACADÉMICO</div>
             <div class="linea-cabecera">DIRECCIÓN DE ADMISIÓN</div>
+            <div class="linea-cabecera">COMISIÓN CENTRAL DE ADMISIÓN</div>
             <div class="linea-cabecera">{{ $examen->proceso->tituloConvocatoria() }}</div>
-            <div class="linea-cabecera">{{ mb_strtoupper($modalidadCabecera) }}</div>
-            <div class="linea-cabecera">{{ $ubicacion }}</div>
+            {{-- La convocatoria se repite con la sede, como en el formato de la
+                 Dirección: la segunda línea es la que distingue el padrón de
+                 Pucallpa del de una filial. --}}
+            <div class="linea-cabecera">{{ $examen->proceso->tituloConvocatoria() }} - {{ $ubicacion }}</div>
         </header>
 
         <div class="titulo">Padrón general de postulantes</div>

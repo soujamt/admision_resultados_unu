@@ -6,7 +6,9 @@ paths:
 # Partials
 
 ## Lista de asistencia: tarjetas con foto y código de barras
-Es un documento por aula, distinto del padrón general: dos columnas de cinco tarjetas por página, y la numeración baja por la izquierda antes de pasar a la derecha. Las tarjetas van en orden alfabético, normalizando con `Str::ascii` como todo listado de apellidos del proyecto.
+Es un documento por aula, distinto del padrón general: dos columnas de cinco tarjetas por página, y la numeración baja por la izquierda antes de pasar a la derecha.
+
+Las tarjetas van **por carpeta**, no alfabéticas: el docente recorre el aula asiento por asiento y va marcando, sin buscar por apellido. Es la excepción a la regla de ordenar apellidos con `Str::ascii`, que sigue valiendo para el padrón general.
 
 La geometría de la tarjeta —qué celda ocupa qué filas— está en [pdf-partials](pdf-partials.md); en resumen, la izquierda apila número, documento y foto, y el centro lleva el código de barras arriba y los datos debajo.
 

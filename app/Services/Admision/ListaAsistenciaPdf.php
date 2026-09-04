@@ -75,9 +75,10 @@ class ListaAsistenciaPdf
     }
 
     /**
-     * Una tarjeta por postulante, en orden alfabetico. `Str::ascii` es lo que
-     * evita que un apellido con tilde caiga al final, porque comparado byte a
-     * byte la «Á» va despues de la «B».
+     * Una tarjeta por postulante, ordenadas por carpeta: el docente recorre el
+     * aula asiento por asiento y va marcando, sin buscar por apellido. Por eso
+     * el numero de la tarjeta coincide con la carpeta cuando el sorteo las
+     * numera de corrido.
      *
      * @param  Collection<int, AsignacionExamen>  $asignaciones
      * @return Collection<int, array<string, mixed>>
@@ -87,12 +88,7 @@ class ListaAsistenciaPdf
         $generador = new BarcodeGeneratorPNG;
 
         return $asignaciones
-            ->sortBy(
-                fn (AsignacionExamen $asignacion): string => Str::ascii(
-                    mb_strtoupper($asignacion->inscripcion->postulante->nombreCompleto()),
-                ).'|'.$asignacion->inscripcion->postulante->numero_documento_pos,
-                SORT_NATURAL,
-            )
+            ->sortBy(fn (AsignacionExamen $asignacion): int => (int) $asignacion->asiento_ase)
             ->values()
             ->map(function (AsignacionExamen $asignacion, int $indice) use ($generador): array {
                 $inscripcion = $asignacion->inscripcion;
