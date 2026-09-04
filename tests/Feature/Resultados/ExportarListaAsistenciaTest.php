@@ -262,3 +262,49 @@ it('repite cabecera, observaciones y pie en todas las hojas', function () {
         ->and($html)->toMatch('/\.pie-linea \{[^}]*border-top:/')
         ->and($html)->toContain('de 2');
 });
+
+it('deja las cinco tarjetas en una sola hoja aunque los nombres sean largos', function () {
+    Storage::fake('local');
+    $postulantes = [];
+
+    foreach (range(1, 10) as $numero) {
+        $postulantes[] = [
+            /* Lo más largo que se ha visto en un padrón: el nombre ocupa dos
+               líneas y la carrera otras dos. */
+            'apellido' => 'MONTALVAN VILLANUEVA '.$numero,
+            'nombres' => 'MARIA FERNANDA DEL CARMEN GUADALUPE',
+            'area' => 1,
+            'carrera' => 'Ingeniería en Industrias Alimentarias y Agroindustriales '.$numero,
+            'asiento' => $numero,
+        ];
+    }
+
+    $aulaExamen = aulaConAsistencia($postulantes);
+    $lienzo = imagecreatetruecolor(300, 400);
+    ob_start();
+    imagejpeg($lienzo);
+    $retrato = (string) ob_get_clean();
+
+    foreach ($aulaExamen->asignaciones as $asignacion) {
+        $ruta = 'procesos/2027-I/fotos/'.$asignacion->inscripcion->postulante->numero_documento_pos.'.jpg';
+        Storage::disk('local')->put($ruta, $retrato);
+        $asignacion->inscripcion->update(['foto_ins' => $ruta]);
+    }
+
+    $datos = app(ListaAsistenciaPdf::class)->datos($aulaExamen->fresh());
+    $documento = app(ListaAsistenciaPdf::class)->documento($aulaExamen->fresh());
+    $documento->output();
+
+    /* Las diez tarjetas son una sola hoja para el servicio, y el pie anuncia
+       ese total. Si la maqueta se pasa del alto útil DomPDF parte la hoja en
+       dos y el pie queda mintiendo («Página 2 de 1»). */
+    expect($datos['paginas'])->toHaveCount(1)
+        ->and($documento->getDomPDF()->getCanvas()->get_page_count())->toBe(1);
+
+    /* La otra mitad del trato: la celda de datos lleva altura fija para que la
+       tarjeta mida igual con nombres cortos que largos. Sin ella hay que dejar
+       de reserva el alto de las dos líneas de más, y las tarjetas vuelven a
+       quedarse a media hoja del recuadro de observaciones. */
+    expect(view('pdf.lista-asistencia', $datos)->render())
+        ->toMatch('/\.celda-datos \{[^}]*height: \d/');
+});

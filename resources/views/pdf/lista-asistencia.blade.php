@@ -26,24 +26,49 @@
 
             .tarjeta { border-collapse: collapse; table-layout: fixed; width: 100%; }
             .tarjeta td { border: 0.7px solid #222; padding: 2px; vertical-align: top; }
-            .fila-codigo { height: 7.5mm; }
-            .fila-documento { height: 6mm; }
-            .fila-foto { height: 7mm; }
-            .fila-firma { height: 16mm; }
+            /* El alto de la tarjeta se gobierna desde `.celda-datos` y `.foto`,
+               más abajo. Aquí NO va la altura de las filas: con
+               `table-layout: fixed` y celdas combinadas DomPDF ignora `height`
+               sobre los `<tr>`, en los dos sentidos (medido sobre el PDF).
+
+               Las cinco filas tienen que caber entre el final de la cabecera y
+               el recuadro de observaciones: el flujo termina en 265mm (297 de
+               la hoja menos los márgenes de 8mm y 32mm del @page). Si se pasa,
+               DomPDF baja la quinta fila a otra hoja, el documento salta de 3
+               páginas a 5 y el pie queda mintiendo («Página 4 de 3»), porque
+               ese total se calcula contando secciones, no páginas reales.
+               Cualquier cambio de estas medidas se comprueba midiendo el PDF,
+               no a ojo sobre el HTML. */
 
             /* Columna izquierda: numero, documento y foto, uno bajo el otro. */
             .celda-numero { font-size: 12px; font-weight: bold; text-align: center; vertical-align: middle !important; width: 22%; }
             .celda-documento { font-size: 9px; font-weight: bold; letter-spacing: .3px; text-align: center; vertical-align: middle !important; }
             .celda-foto { text-align: center; vertical-align: middle !important; }
+            /* Segunda palanca. La celda de la foto abarca las dos filas de
+               abajo, así que la foto marca el alto de esa mitad de la tarjeta.
+               El tope queda por debajo del alto que ya le impone el ancho de
+               su columna (~25.8mm), de modo que toda foto vertical sale
+               exactamente de 22mm: sin ese tope, un retrato más alargado
+               estiraría solo su tarjeta. Cada milímetro de más aquí baja la
+               rejilla unos 5mm, uno por fila, así que es también de donde se
+               saca sitio cuando hace falta agrandar las observaciones. */
             .foto { max-height: 22mm; max-width: 95%; width: auto; }
             .sin-foto { color: #999; font-size: 6.5px; }
 
             /* Columna central: barras arriba, datos al medio, firma abajo. */
             .celda-barras { padding: 1px 3px !important; text-align: center !important; vertical-align: middle !important; width: 60%; }
             .barras { height: 6mm; width: 50%; }
-            .celda-datos { padding: 3px 4px !important; }
+            /* Primera palanca, y la que vuelve predecible el alto de la
+               tarjeta. Sin altura fija, la tarjeta crecía cuando el nombre o
+               la carrera saltaban a dos líneas, así que la hoja entraba justa
+               con apellidos cortos y se partía con los largos. Con 11mm caben
+               las dos líneas de nombre y las dos de carrera sin empujar, y
+               todas las tarjetas miden igual venga el nombre que venga. */
+            .celda-datos { height: 11mm; padding: 3px 4px !important; }
             .nombre { font-size: 8.5px; font-weight: bold; line-height: 1.15; }
             .procedencia { color: #0563C1; font-size: 7.2px; line-height: 1.15; padding-top: 2px; }
+            /* Sin altura propia: la firma se queda con lo que sobra de la
+               tarjeta, que es de donde sale su holgura para firmar. */
             .celda-firma { padding: 2px 4px !important; vertical-align: bottom !important; }
             .rotulo-firma { font-size: 8px; font-weight: bold; }
 
@@ -59,7 +84,15 @@
             .observaciones { border: 0.7px solid #222; border-collapse: collapse; table-layout: fixed; width: 100%; }
             .observaciones td { padding: 1.5mm 3mm 1mm; }
             .rotulo-observaciones { font-size: 9px; font-weight: bold; margin-bottom: 1mm; }
-            .renglon { border-bottom: 0.6px solid #222; height: 4.5mm; }
+            /* El bloque del pie tiene la base anclada, así que la caja crece
+               hacia arriba: cada milímetro de renglón sube su borde superior
+               tres, uno por renglón. Y como el pie va fijo, no aparta a las
+               tarjetas —las pisaría—, de modo que el techo lo pone la fila más
+               baja de la rejilla en el peor caso, no en el normal: con un
+               nombre de tres líneas la quinta fila llega a 258.4mm y el borde
+               de la caja queda en 261.9mm. Para agrandarla más hay que bajar
+               antes el tope de `.foto`. */
+            .renglon { border-bottom: 0.6px solid #222; height: 6mm; }
 
             .pie-linea { border-top: 0.7px solid #222; color: #333; font-size: 7.5px; margin-top: 2mm; padding-top: 1.2mm; }
             .pie-tabla { table-layout: fixed; width: 100%; }
