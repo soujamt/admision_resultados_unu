@@ -111,7 +111,9 @@ it('arma la cabecera y las columnas del formato oficial', function () {
         'VICERRECTORADO ACADÉMICO',
         'DIRECCIÓN DE ADMISIÓN',
         'COMISIÓN CENTRAL DE ADMISIÓN',
-        '2027 - PRIMERA CONVOCATORIA - PUCALLPA',
+        '2027 - PRIMERA CONVOCATORIA',
+        /* Cierra con el nombre de la jornada y la sede. */
+        'EXAMEN CEPREUNU - PUCALLPA',
         'Padrón general de postulantes',
         'isologo-unu.png',
     );

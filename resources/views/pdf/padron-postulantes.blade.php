@@ -40,10 +40,11 @@
             <div class="linea-cabecera">DIRECCIÓN DE ADMISIÓN</div>
             <div class="linea-cabecera">COMISIÓN CENTRAL DE ADMISIÓN</div>
             <div class="linea-cabecera">{{ $examen->proceso->tituloConvocatoria() }}</div>
-            {{-- La convocatoria se repite con la sede, como en el formato de la
-                 Dirección: la segunda línea es la que distingue el padrón de
-                 Pucallpa del de una filial. --}}
-            <div class="linea-cabecera">{{ $examen->proceso->tituloConvocatoria() }} - {{ $ubicacion }}</div>
+            {{-- Cierra con la jornada y la sede: es la línea que distingue el
+                 padrón del examen de selección CEPREUNU del del ordinario, y el
+                 de Pucallpa del de una filial. El nombre de la jornada ya trae
+                 el código del proceso, por eso no se le añade aparte. --}}
+            <div class="linea-cabecera">{{ mb_strtoupper($examen->nombre_exa) }} - {{ $ubicacion }}</div>
         </header>
 
         <div class="titulo">Padrón general de postulantes</div>
