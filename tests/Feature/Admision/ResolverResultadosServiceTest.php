@@ -7,6 +7,7 @@ use App\Enums\GrupoModalidad;
 use App\Models\Carrera;
 use App\Models\Examen;
 use App\Models\ExamenPostulante;
+use App\Models\ExamenRespuesta;
 use App\Models\Inscripcion;
 use App\Models\Modalidad;
 use App\Models\Postulante;
@@ -354,4 +355,57 @@ it('no duplica la fila del no presentado al resolver dos veces', function () {
     expect($resumen['postulantes'])->toBe(2)
         ->and($examen->postulantes()->count())->toBe(2)
         ->and($examen->postulantes()->delLector()->count())->toBe(1);
+});
+
+it('penaliza la doble respuesta igual que el error, según el Art. 77', function () {
+    $proceso = Proceso::factory()->codigo('2027-I')->create();
+    $vacante = Vacante::factory()->create(['id_pro' => $proceso->id_pro, 'cantidad_vac' => 5]);
+    /* Valores del Art. 77 sin tocar: +1, -0,01 y +0,1. */
+    $examen = Examen::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'puntaje_minimo_exa' => 50,
+        'aplicar_factor_dificultad_exa' => false,
+    ]);
+    $postulante = PadronDeExamen::postulante($examen, $vacante, 91, null);
+    ExamenRespuesta::factory()->create([
+        'id_exp' => $postulante->id_exp,
+        'aciertos_exr' => 60,
+        'errores_exr' => 20,
+        'blancos_exr' => 10,
+        'dobles_exr' => 10,
+    ]);
+
+    app(ResolverResultadosService::class)->resolver($examen);
+
+    /* 60(+1) + 30(-0,01) entre errores y dobles + 10(+0,1) = 60,70. */
+    expect((float) $postulante->resultado->puntaje_directo_res)->toBe(60.7)
+        ->and($postulante->resultado->estado_res)->toBe(EstadoResultado::Ingreso);
+});
+
+it('la doble respuesta resta lo mismo que un error de más', function () {
+    $proceso = Proceso::factory()->codigo('2027-I')->create();
+    $vacante = Vacante::factory()->create(['id_pro' => $proceso->id_pro, 'cantidad_vac' => 5]);
+    $examen = Examen::factory()->create([
+        'id_pro' => $proceso->id_pro,
+        'puntaje_minimo_exa' => 50,
+        'aplicar_factor_dificultad_exa' => false,
+    ]);
+
+    /* Mismo total de preguntas, repartido distinto entre error y doble. */
+    $conDobles = PadronDeExamen::postulante($examen, $vacante, 92, null);
+    ExamenRespuesta::factory()->create([
+        'id_exp' => $conDobles->id_exp,
+        'aciertos_exr' => 70, 'errores_exr' => 15, 'blancos_exr' => 0, 'dobles_exr' => 15,
+    ]);
+    $soloErrores = PadronDeExamen::postulante($examen, $vacante, 93, null);
+    ExamenRespuesta::factory()->create([
+        'id_exp' => $soloErrores->id_exp,
+        'aciertos_exr' => 70, 'errores_exr' => 30, 'blancos_exr' => 0, 'dobles_exr' => 0,
+    ]);
+
+    app(ResolverResultadosService::class)->resolver($examen);
+
+    expect((float) $conDobles->resultado->puntaje_directo_res)
+        ->toBe((float) $soloErrores->resultado->puntaje_directo_res)
+        ->toBe(69.7);
 });

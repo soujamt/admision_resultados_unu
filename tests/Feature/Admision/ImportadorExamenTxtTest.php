@@ -65,3 +65,25 @@ it('no altera las respuestas si una cartilla del archivo no existe en el padrón
         ->and($resumen->observaciones[0])->toContain('no existe en el padrón')
         ->and($postulante->respuesta()->value('aciertos_exr'))->toBe(75);
 });
+
+it('lee aciertos, errores, blancos y dobles cada uno de su columna del TXT', function () {
+    Storage::fake('local');
+    $inscripcion = Inscripcion::factory()->create();
+    $examen = Examen::create(['id_pro' => $inscripcion->id_pro, 'nombre_exa' => 'Examen de prueba']);
+
+    Storage::disk('local')->put('padron.txt', "DARACOD;COD POSTULANTE;APELLDOS Y NOMBRES;CARRERAS;MODALIDAD;MOD EXTRA;AULA;\n3894;{$inscripcion->postulante->numero_documento_pos};POSTULANTE DE PRUEBA;INGAA;OR;;009;\n");
+
+    /* Cuatro valores distintos: si se permutan las columnas, falla. */
+    Storage::disk('local')->put('respuestas.txt', 'DARACOD;DIRECTA;TRANSFORMADA;ACIERTOS;ERRORES;BLANCOS;DOBLES;RESPUESTAS;'."\n".'3894;60,00000;12,00000;60;20;15;5;'.implode(';', array_fill(0, 100, 'A')).";\n");
+
+    $importador = app(ImportadorExamenTxt::class);
+    $importador->importarPadron($examen, Storage::disk('local')->path('padron.txt'));
+    $importador->importarRespuestas($examen, Storage::disk('local')->path('respuestas.txt'));
+
+    $respuesta = ExamenRespuesta::sole();
+
+    expect($respuesta->aciertos_exr)->toBe(60)
+        ->and($respuesta->errores_exr)->toBe(20)
+        ->and($respuesta->blancos_exr)->toBe(15)
+        ->and($respuesta->dobles_exr)->toBe(5);
+});
