@@ -6,6 +6,7 @@ use App\Enums\Permiso;
 use App\Models\Rol;
 use App\Models\Usuario;
 use App\Services\Auth\AccesoService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -20,6 +21,24 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registrarGates();
         $this->invalidarCacheDeAccesos();
+        $this->nombrarLosMesesComoEnElPeru();
+    }
+
+    /**
+     * Carbon traduce el noveno mes como «septiembre», pero los documentos que
+     * publica la universidad escriben «setiembre», la forma corriente en el
+     * Peru y igual de valida para la RAE. Se corrige el locale entero en vez
+     * de cada vista, para que valga en cualquier fecha con el mes en letras.
+     *
+     * `setMessages` carga primero el archivo del locale y encima mezcla lo que
+     * se le pasa, asi que el resto de la traduccion queda intacta.
+     */
+    private function nombrarLosMesesComoEnElPeru(): void
+    {
+        Carbon::getTranslator()->setMessages('es', [
+            'months' => ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'setiembre', 'octubre', 'noviembre', 'diciembre'],
+            'months_short' => ['ene.', 'feb.', 'mar.', 'abr.', 'may.', 'jun.', 'jul.', 'ago.', 'set.', 'oct.', 'nov.', 'dic.'],
+        ]);
     }
 
     /**

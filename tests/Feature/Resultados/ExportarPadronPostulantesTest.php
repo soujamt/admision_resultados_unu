@@ -147,6 +147,18 @@ it('arma la cabecera y las columnas del formato oficial', function () {
         ->and($html)->not->toContain('PAB I - Piso 2', 'Aula 1');
 });
 
+it('escribe «setiembre» a la peruana en la fecha de la cabecera', function () {
+    $escenario = jornadaConSorteo([
+        ['apellido' => 'ÁLVAREZ', 'nombres' => 'ANA', 'aula' => 1, 'asiento' => 3],
+    ]);
+    $escenario['examen']->update(['fecha_exa' => '2027-09-19']);
+
+    $html = view('pdf.padron-postulantes', app(PadronPostulantesPdf::class)->datos($escenario['examen']->fresh()))->render();
+
+    expect($html)->toContain('19 de setiembre de 2027')
+        ->and($html)->not->toContain('septiembre');
+});
+
 it('avisa cuando la jornada todavía no tiene sorteo', function () {
     $escenario = jornadaConSorteo([]);
 
