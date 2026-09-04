@@ -6,6 +6,10 @@
         <x-slot:acciones>
             @if ($examen && $estadisticas['resultados'] > 0)
                 @can(App\Enums\Permiso::ResultadosExportar->value)
+                    <flux:button :href="route('resultados.excel', $examen)" icon="table-cells" variant="filled">
+                        Excel de resultados
+                    </flux:button>
+
                     <flux:button :href="route('resultados.pdf.juego', $examen)" icon="archive-box-arrow-down" variant="filled">
                         Juego por carrera (Art. 84)
                     </flux:button>

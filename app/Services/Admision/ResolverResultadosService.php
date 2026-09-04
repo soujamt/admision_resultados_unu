@@ -264,6 +264,7 @@ class ResolverResultadosService
                 'vacante' => $vacante,
                 'modalidad' => $inscripcion->modalidad,
                 'id_car' => $inscripcion->id_car,
+                'id_are' => $inscripcion->carrera->id_are,
                 'id_sed' => $inscripcion->id_sed,
                 'puntaje_directo' => $puntajeDirecto,
                 'puntaje' => $puntajeDirecto,
@@ -484,9 +485,16 @@ class ResolverResultadosService
         $idsConPuntaje = array_keys(array_filter($datos, fn (array $fila): bool => $fila['puntaje'] !== null));
         $ordenGeneral = $this->ordenes($idsConPuntaje, $datos);
         $ordenCarrera = [];
+        $ordenArea = [];
 
         foreach (collect($idsConPuntaje)->groupBy(fn (int $id): int => $datos[$id]['id_car']) as $idsCarrera) {
             $ordenCarrera += $this->ordenes($idsCarrera->all(), $datos);
+        }
+
+        /* El area academica del Art. 4 agrupa varias carreras; su orden de
+           merito se numera con la misma regla de empate del Art. 85. */
+        foreach (collect($idsConPuntaje)->groupBy(fn (int $id): int => $datos[$id]['id_are']) as $idsArea) {
+            $ordenArea += $this->ordenes($idsArea->all(), $datos);
         }
 
         $ahora = now();
@@ -503,6 +511,7 @@ class ResolverResultadosService
                 'puntaje_minimo_res' => $fila['minimo'],
                 'orden_general_res' => $ordenGeneral[$id] ?? null,
                 'orden_carrera_res' => $ordenCarrera[$id] ?? null,
+                'orden_area_res' => $ordenArea[$id] ?? null,
                 'repesca_res' => $fila['repesca'],
                 'estado_res' => $fila['estado']->value,
                 'motivo_res' => $fila['motivo'],

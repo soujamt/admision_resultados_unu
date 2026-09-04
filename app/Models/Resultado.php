@@ -17,7 +17,7 @@ class Resultado extends Model
 
     protected $primaryKey = 'id_res';
 
-    protected $fillable = ['id_exa', 'id_exp', 'id_vac', 'puntaje_directo_res', 'factor_dificultad_res', 'puntaje_res', 'puntaje_minimo_res', 'orden_general_res', 'orden_carrera_res', 'repesca_res', 'estado_res', 'motivo_res'];
+    protected $fillable = ['id_exa', 'id_exp', 'id_vac', 'puntaje_directo_res', 'factor_dificultad_res', 'puntaje_res', 'puntaje_minimo_res', 'orden_general_res', 'orden_carrera_res', 'orden_area_res', 'repesca_res', 'estado_res', 'motivo_res'];
 
     protected function casts(): array
     {

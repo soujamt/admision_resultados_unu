@@ -7,6 +7,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | {app/Models/Vacante.php,app/Models/ProcesoModalidad.php,app/Services/Admision/**}, resources/views/pages/configuracion/vacantes/** | .ai/rules/admision.md |
 | {app/**,tests/**} | .ai/rules/app.md |
 | resources/views/pages/resultados/aulas/**, resources/views/pages/resultados/aulas/aulas.blade.php | .ai/rules/aulas.md |
+| app/Exports/** | .ai/rules/exports.md |
 | {app/Services/Admision/IngresanteService.php,app/Services/Admision/ArrastreVacantesService.php,app/Models/Ingresante.php,app/Enums/CondicionIngresante.php,resources/views/pages/resultados/ingresantes/**} | .ai/rules/ingresantes.md |
 | {app/Services/Admision/ResolverResultadosService.php,app/Models/ExamenPostulante.php,app/Services/Admision/GeneradorLecturaOptica.php} | .ai/rules/models-services-admision.md |
 | {app/Services/Admision/AlmacenFotos.php,app/Models/Inscripcion.php,app/Models/Proceso.php} | .ai/rules/models.md |

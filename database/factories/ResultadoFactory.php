@@ -31,6 +31,7 @@ class ResultadoFactory extends Factory
             'puntaje_minimo_res' => 50,
             'orden_general_res' => 1,
             'orden_carrera_res' => 1,
+            'orden_area_res' => 1,
             'estado_res' => EstadoResultado::Pendiente,
         ];
     }
