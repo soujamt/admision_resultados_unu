@@ -111,15 +111,15 @@ it('arma la cabecera y las columnas del formato oficial', function () {
         'VICERRECTORADO ACADÉMICO',
         'DIRECCIÓN DE ADMISIÓN',
         'COMISIÓN CENTRAL DE ADMISIÓN',
-        '2027 - PRIMERA CONVOCATORIA',
-        /* Cierra con el nombre de la jornada y la sede. */
-        'EXAMEN CEPREUNU - PUCALLPA',
+        /* Cierra con la modalidad y el código del proceso. */
+        'MODALIDAD DE ADMISIÓN POR EXONERACIÓN - CEPREUNU',
+        '2027-I',
         'Padrón general de postulantes',
         'isologo-unu.png',
     );
 
-    /* El padrón general no lleva modalidad: las abarca todas. */
-    expect($html)->not->toContain('EXONERACIÓN - CEPREUNU');
+    /* La cabecera va fija para repetirse en todas las hojas. */
+    expect($html)->toMatch('/\.cabecera \{[^}]*position: fixed/');
 
     /* Las cinco columnas del formato, en orden y sin la de documento. */
     expect($html)->toMatch('/N°<\/th>\s*<th class="col-codigo">Código<\/th>\s*<th class="col-postulante">Apellidos y nombres<\/th>\s*<th class="col-carrera">Carrera profesional<\/th>\s*<th class="col-pabellon">Pabellón<\/th>\s*<th class="col-aula">Aula<\/th>\s*<th class="col-carpeta">Carpeta<\/th>/');

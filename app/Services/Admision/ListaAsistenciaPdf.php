@@ -24,6 +24,12 @@ class ListaAsistenciaPdf
     /** Tarjetas por columna; la pagina lleva dos columnas. */
     private const POR_COLUMNA = 5;
 
+    /**
+     * Codigo del formato en el sistema de gestion de la calidad, que va al pie
+     * de cada hoja. Cambia cuando la Direccion aprueba una version nueva.
+     */
+    private const CODIGO_FORMATO = 'FOR-PM01.02.004-V1.1';
+
     public function __construct(private readonly AlmacenFotos $fotos) {}
 
     public function documento(ExamenAula $aulaExamen): DocumentoPdf
@@ -65,11 +71,12 @@ class ListaAsistenciaPdf
 
         return [
             'aulaExamen' => $aulaExamen,
-            'tituloProceso' => 'PROCESO DE ADMISIÓN '.$aulaExamen->examen->proceso->tituloConvocatoria(),
+            'codigoProceso' => $aulaExamen->examen->proceso->codigo_pro,
             'modalidadCabecera' => filled($modalidades) ? $modalidades : $aulaExamen->examen->nombre_exa,
             'ubicacion' => $aulaExamen->aula->sede->ubicacionCabecera(),
             'fecha' => $aulaExamen->examen->fecha_exa ?? now(),
             'total' => $tarjetas->count(),
+            'codigoFormato' => self::CODIGO_FORMATO,
             'paginas' => $this->paginas($tarjetas),
         ];
     }

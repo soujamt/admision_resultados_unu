@@ -91,7 +91,7 @@ it('arma la tarjeta con el área de la carrera y el código de barras del docume
     $primera = $datos['paginas'][0][0]['izquierda'];
 
     expect($datos['total'])->toBe(2)
-        ->and($datos['tituloProceso'])->toBe('PROCESO DE ADMISIÓN 2027 - PRIMERA CONVOCATORIA')
+        ->and($datos['codigoProceso'])->toBe('2027-I')
         ->and($datos['ubicacion'])->toBe('PUCALLPA')
         /* Manda la carpeta, no el apellido: VENTOCILLA ocupa la 1. */
         ->and($primera['nombre'])->toBe('VENTOCILLA PISCO, WILLIAMS')
@@ -210,9 +210,10 @@ it('imprime la cabecera y los rótulos del formato de asistencia', function () {
     $html = view('pdf.lista-asistencia', app(ListaAsistenciaPdf::class)->datos($aulaExamen))->render();
 
     expect($html)->toContain(
-        'PROCESO DE ADMISIÓN 2027 - PRIMERA CONVOCATORIA',
-        'EXONERACIÓN - CEPREUNU',
-        'PUCALLPA',
+        'UNIVERSIDAD NACIONAL DE UCAYALI',
+        'COMISIÓN CENTRAL DE ADMISIÓN',
+        'MODALIDAD DE ADMISIÓN POR EXONERACIÓN - CEPREUNU',
+        '2027-I',
         'Lista de asistencia de postulantes',
         'N° Pabellón',
         'N° Aula',
@@ -224,5 +225,40 @@ it('imprime la cabecera y los rótulos del formato de asistencia', function () {
         'HUELLA<br>DACTILAR',
         'FIRMA',
         'Arial, Helvetica, sans-serif',
+        'OBSERVACIONES',
+        'FOR-PM01.02.004-V1.1',
+        'SCP-C',
     );
+});
+
+it('repite cabecera, observaciones y pie en todas las hojas', function () {
+    $postulantes = [];
+
+    /* Doce tarjetas: dos hojas, la primera llena y la segunda con dos. */
+    foreach (range(1, 12) as $numero) {
+        $postulantes[] = [
+            'apellido' => 'APELLIDO'.str_pad((string) $numero, 2, '0', STR_PAD_LEFT),
+            'nombres' => 'NOMBRE',
+            'area' => 5,
+            'carrera' => 'Carrera '.$numero,
+            'asiento' => $numero,
+        ];
+    }
+
+    $aulaExamen = aulaConAsistencia($postulantes);
+    $datos = app(ListaAsistenciaPdf::class)->datos($aulaExamen);
+    $html = view('pdf.lista-asistencia', $datos)->render();
+
+    expect($datos['paginas'])->toHaveCount(2)
+        /* La cabecera se emite por sección, una por hoja. */
+        ->and(substr_count($html, 'class="cabecera"'))->toBe(2)
+        /* Observaciones y pie van fijos: se emiten una vez y DomPDF los
+           repite en cada hoja, pegados entre sí al fondo. */
+        ->and(substr_count($html, 'OBSERVACIONES'))->toBe(1)
+        ->and(substr_count($html, 'class="pie"'))->toBe(1)
+        /* La caja vive dentro del bloque fijo, pegada al pie. */
+        ->and($html)->toMatch('/\.pie \{[^}]*position: fixed/')
+        ->and($html)->toMatch('/<footer class="pie">\s*<table class="observaciones">/')
+        ->and($html)->toMatch('/\.pie-linea \{[^}]*border-top:/')
+        ->and($html)->toContain('de 2');
 });

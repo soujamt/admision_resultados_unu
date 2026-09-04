@@ -3,12 +3,15 @@
     <head>
         <meta charset="utf-8">
         <style>
-            @page { margin: 8mm 8mm 10mm; }
+            /* El margen inferior reserva el sitio del pie: al ir en
+               position:fixed no ocupa lugar en el flujo. */
+            @page { margin: 8mm 8mm 32mm; }
             * { box-sizing: border-box; }
             body { color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 8px; margin: 0; }
 
-            .cabecera { min-height: 22mm; position: relative; text-align: center; }
+            .cabecera { min-height: 24mm; position: relative; text-align: center; }
             .isologo { height: 18mm; left: 2mm; position: absolute; top: 0; width: auto; }
+            .institucion { font-size: 12px; font-weight: bold; line-height: 1.2; margin-bottom: 1px; }
             .linea-cabecera { font-size: 10px; font-weight: bold; line-height: 1.3; }
             .titulo { font-size: 12px; font-weight: bold; margin: 6px 0 4px; text-align: center; text-transform: uppercase; }
             .fecha { font-size: 9px; margin-bottom: 4px; text-align: right; }
@@ -47,7 +50,23 @@
             .celda-huella { padding-bottom: 2px !important; text-align: end; vertical-align: bottom !important; width: 18%; }
             .rotulo { color: #777; font-size: 6.5px; font-weight: normal; line-height: 1.1; }
 
-            .pie { bottom: -6mm; color: #555; font-size: 7px; left: 0; position: fixed; right: 0; text-align: center; }
+            /* Observaciones y pie van juntos en un solo bloque fijo al fondo:
+               así cierran todas las hojas por igual y quedan pegados entre sí,
+               sin flotar a media página cuando la última lleva pocas tarjetas.
+               La caja va en flujo normal dentro del bloque: una tabla con
+               position:fixed propia DomPDF la colapsa a la altura del rótulo. */
+            .pie { bottom: -29mm; left: 0; position: fixed; right: 0; }
+            .observaciones { border: 0.7px solid #222; border-collapse: collapse; table-layout: fixed; width: 100%; }
+            .observaciones td { padding: 1.5mm 3mm 1mm; }
+            .rotulo-observaciones { font-size: 9px; font-weight: bold; margin-bottom: 1mm; }
+            .renglon { border-bottom: 0.6px solid #222; height: 4.5mm; }
+
+            .pie-linea { border-top: 0.7px solid #222; color: #333; font-size: 7.5px; margin-top: 2mm; padding-top: 1.2mm; }
+            .pie-tabla { table-layout: fixed; width: 100%; }
+            .pie-tabla td { padding: 0; }
+            .pie-izq { text-align: left; }
+            .pie-centro { text-align: center; }
+            .pie-der { text-align: right; }
             .pagina::after { content: counter(page); }
         </style>
     </head>
@@ -55,10 +74,10 @@
         @foreach ($paginas as $filas)
             <section @if (! $loop->first) style="page-break-before: always;" @endif>
                 <header class="cabecera">
-                    <img class="isologo" src="{{ public_path('img/isologo-unu.png') }}" alt="Isologo de la Universidad Nacional de Ucayali">
-                    <div class="linea-cabecera">{{ $tituloProceso }}</div>
-                    <div class="linea-cabecera">{{ mb_strtoupper($modalidadCabecera) }}</div>
-                    <div class="linea-cabecera">{{ $ubicacion }}</div>
+                    @include('pdf.partials.cabecera-institucional', [
+                        'modalidad' => $modalidadCabecera,
+                        'codigoProceso' => $codigoProceso,
+                    ])
                 </header>
 
                 <div class="titulo">Lista de asistencia de postulantes</div>
@@ -97,10 +116,35 @@
             </section>
         @endforeach
 
+        {{-- Bloque fijo del fondo: DomPDF lo repite en cada hoja. El total de
+             páginas sale del número de secciones porque cada una es una hoja;
+             DomPDF no expone un contador de páginas totales en CSS. --}}
         <footer class="pie">
-            {{ $aulaExamen->examen->proceso->codigo_pro }} ·
-            {{ $aulaExamen->aula->etiqueta() }} ·
-            {{ $total }} postulante(s) · Página <span class="pagina"></span>
+            <table class="observaciones">
+                <tr>
+                    <td>
+                        <div class="rotulo-observaciones">OBSERVACIONES</div>
+                        <div class="renglon"></div>
+                        <div class="renglon"></div>
+                        <div class="renglon"></div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="pie-linea">
+                <table class="pie-tabla">
+                    <tr>
+                        <td class="pie-izq">
+                            {{ $aulaExamen->aula->sede->abreviatura() }} =&gt;
+                            {{ mb_strtoupper($aulaExamen->aula->sede->nombre_sed) }}
+                        </td>
+                        <td class="pie-centro">
+                            Página <span class="pagina"></span> de {{ $paginas->count() }}
+                        </td>
+                        <td class="pie-der">{{ $codigoFormato }}</td>
+                    </tr>
+                </table>
+            </div>
         </footer>
     </body>
 </html>

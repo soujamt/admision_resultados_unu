@@ -3,11 +3,15 @@
     <head>
         <meta charset="utf-8">
         <style>
-            @page { margin: 8mm 12mm 10mm; }
+            /* Los márgenes reservan el sitio de la cabecera y del pie: ambos van
+               fijos y no ocupan lugar en el flujo, así que sin margen el listado
+               les pasaría por encima al saltar de hoja. */
+            @page { margin: 46mm 12mm 14mm; }
             * { box-sizing: border-box; }
             body { color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 8px; margin: 0; }
-            .cabecera { min-height: 28mm; position: relative; text-align: center; }
-            .isologo { height: 23mm; left: 8mm; position: absolute; top: 0; width: auto; }
+            /* Fija para repetirse en todas las hojas, no solo en la primera. */
+            .cabecera { left: 0; position: fixed; right: 0; text-align: center; top: -38mm; }
+            .isologo { height: 23mm; left: 0; position: absolute; top: 0; width: auto; }
             .institucion { font-size: 14px; font-weight: bold; line-height: 1.15; margin-bottom: 2px; }
             .linea-cabecera { font-size: 9.5px; font-weight: bold; line-height: 1.25; }
             .titulo { font-size: 11px; font-weight: bold; margin: 9px 0 4px; text-align: center; text-transform: uppercase; }
@@ -33,26 +37,18 @@
     </head>
     <body>
         <header class="cabecera">
-            <img class="isologo" src="{{ public_path('img/isologo-unu.png') }}" alt="Isologo de la Universidad Nacional de Ucayali">
+            @include('pdf.partials.cabecera-institucional', [
+                'modalidad' => $modalidadCabecera,
+                'codigoProceso' => $examen->proceso->codigo_pro,
+            ])
 
-            <div class="institucion">UNIVERSIDAD NACIONAL DE UCAYALI</div>
-            <div class="linea-cabecera">VICERRECTORADO ACADÉMICO</div>
-            <div class="linea-cabecera">DIRECCIÓN DE ADMISIÓN</div>
-            <div class="linea-cabecera">COMISIÓN CENTRAL DE ADMISIÓN</div>
-            <div class="linea-cabecera">{{ $examen->proceso->tituloConvocatoria() }}</div>
-            {{-- Cierra con la jornada y la sede: es la línea que distingue el
-                 padrón del examen de selección CEPREUNU del del ordinario, y el
-                 de Pucallpa del de una filial. El nombre de la jornada ya trae
-                 el código del proceso, por eso no se le añade aparte. --}}
-            <div class="linea-cabecera">{{ mb_strtoupper($examen->nombre_exa) }} - {{ $ubicacion }}</div>
+            <div class="titulo">Padrón general de postulantes</div>
+
+            <div class="fecha">
+                {{ mb_convert_case($ubicacion, MB_CASE_TITLE, 'UTF-8') }},
+                {{ ($examen->fecha_exa ?? now())->translatedFormat('d \d\e F \d\e Y') }}
+            </div>
         </header>
-
-        <div class="titulo">Padrón general de postulantes</div>
-
-        <div class="fecha">
-            {{ mb_convert_case($ubicacion, MB_CASE_TITLE, 'UTF-8') }},
-            {{ ($examen->fecha_exa ?? now())->translatedFormat('d \d\e F \d\e Y') }}
-        </div>
 
         <table class="listado">
             <thead>

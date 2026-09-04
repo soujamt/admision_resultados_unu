@@ -38,14 +38,17 @@ class PadronPostulantesPdf
         $examen->loadMissing('proceso');
         $asignaciones = $this->asignaciones($examen);
         $sedes = $asignaciones->pluck('aulaExamen.aula.sede')->filter()->unique('id_sed');
+        $modalidades = $asignaciones
+            ->pluck('inscripcion.modalidad.nombre_mod')
+            ->filter()
+            ->unique()
+            ->sort(SORT_NATURAL | SORT_FLAG_CASE)
+            ->implode(' / ');
 
-        /*
-         * La cabecera no lleva modalidad: este padron es general y abarca
-         * todas las del proceso, asi que enumerarlas daria una linea inservible.
-         */
         return [
             'examen' => $examen,
             'asignaciones' => $asignaciones,
+            'modalidadCabecera' => filled($modalidades) ? $modalidades : $examen->nombre_exa,
             'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
         ];
     }
