@@ -5,7 +5,7 @@
         <style>
             @page { margin: 8mm 10mm 10mm; }
             * { box-sizing: border-box; }
-            body { color: #111; font-family: DejaVu Sans, sans-serif; font-size: 7px; margin: 0; }
+            body { color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 7px; margin: 0; }
             .cabecera { min-height: 29mm; position: relative; text-align: center; }
             .isologo { height: 24mm; left: 8mm; position: absolute; top: 0; width: auto; }
             .institucion { font-size: 14px; font-weight: bold; line-height: 1.15; margin-bottom: 2px; }
