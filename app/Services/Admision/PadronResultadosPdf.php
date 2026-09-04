@@ -2,6 +2,7 @@
 
 namespace App\Services\Admision;
 
+use App\Enums\OrdenPadronResultados;
 use App\Models\Carrera;
 use App\Models\Examen;
 use App\Models\Resultado;
@@ -22,9 +23,13 @@ use RuntimeException;
  */
 class PadronResultadosPdf
 {
-    public function documento(Examen $examen, ?int $idCarrera = null, ?int $idVacante = null): DocumentoPdf
-    {
-        return Pdf::loadView('pdf.resultados.general', $this->datos($examen, $idCarrera, $idVacante))
+    public function documento(
+        Examen $examen,
+        ?int $idCarrera = null,
+        ?int $idVacante = null,
+        OrdenPadronResultados $orden = OrdenPadronResultados::PorCarrera,
+    ): DocumentoPdf {
+        return Pdf::loadView('pdf.resultados.general', $this->datos($examen, $idCarrera, $idVacante, $orden))
             ->setPaper('a4');
     }
 
@@ -45,18 +50,27 @@ class PadronResultadosPdf
             ->get();
     }
 
-    public function nombreArchivo(Examen $examen, ?Carrera $carrera = null): string
-    {
+    public function nombreArchivo(
+        Examen $examen,
+        ?Carrera $carrera = null,
+        OrdenPadronResultados $orden = OrdenPadronResultados::PorCarrera,
+    ): string {
         $base = 'resultados-'.$examen->proceso->codigo_pro.'-'.$examen->nombre_exa;
 
-        return Str::slug($carrera === null ? $base : $base.'-'.$carrera->nombre_corto_car);
+        return Str::slug($carrera === null
+            ? $base.$orden->sufijoArchivo()
+            : $base.'-'.$carrera->nombre_corto_car);
     }
 
     /**
      * @return array<string, mixed>
      */
-    public function datos(Examen $examen, ?int $idCarrera = null, ?int $idVacante = null): array
-    {
+    public function datos(
+        Examen $examen,
+        ?int $idCarrera = null,
+        ?int $idVacante = null,
+        OrdenPadronResultados $orden = OrdenPadronResultados::PorCarrera,
+    ): array {
         $examen->loadMissing('proceso');
         $consulta = Resultado::query()
             ->where('id_exa', $examen->id_exa)
@@ -88,31 +102,70 @@ class PadronResultadosPdf
             throw new RuntimeException('La jornada todavía no tiene resultados generados.');
         }
 
-        $sedes = $resultados->pluck('postulante.inscripcion.sede')->filter()->unique('id_sed');
-        $esGeneral = ! $esPorCarrera;
+        /*
+         * El alfabetico se reordena en memoria; el de merito ya sale ordenado
+         * de la consulta, y el filtrado por carrera respeta su orden de merito
+         * dentro de la carrera.
+         */
+        $listado = ! $esPorCarrera && $orden === OrdenPadronResultados::Alfabetico
+            ? $this->alfabeticamente($resultados)
+            : $resultados;
+        $seccion = $this->seccion($listado);
 
         return [
             'examen' => $examen,
-            'resultados' => $resultados,
+            'resultados' => $listado,
             'esPorCarrera' => $esPorCarrera,
-            'tituloListado' => 'Por carrera profesional',
+            'tituloListado' => $esPorCarrera
+                ? OrdenPadronResultados::PorCarrera->titulo()
+                : $orden->titulo(),
+            'modalidades' => $seccion['modalidades'],
+            'ubicacion' => $seccion['ubicacion'],
+            'secciones' => ! $esPorCarrera && $orden->agrupaPorCarrera()
+                ? $this->seccionesPorCarrera($listado)
+                : collect([$seccion]),
+        ];
+    }
+
+    /**
+     * Orden alfabetico real: `Str::ascii` es lo que evita que un apellido con
+     * tilde caiga al final, porque comparado byte a byte la «Á» va despues de
+     * la «B». El documento del examen solo desempata homonimos.
+     *
+     * @param  Collection<int, Resultado>  $resultados
+     * @return Collection<int, Resultado>
+     */
+    private function alfabeticamente(Collection $resultados): Collection
+    {
+        return $resultados
+            ->sortBy(
+                fn (Resultado $resultado): string => Str::ascii(
+                    mb_strtoupper((string) $resultado->postulante->nombre_exp),
+                ).'|'.$resultado->postulante->documento_exp,
+                SORT_NATURAL,
+            )
+            ->values();
+    }
+
+    /**
+     * Cada seccion arrastra su propia cabecera, porque una pagina por carrera
+     * puede tener modalidades y sede distintas al resto del padron.
+     *
+     * @param  Collection<int, Resultado>  $resultados
+     * @return array{resultados: Collection<int, Resultado>, modalidades: string, ubicacion: string}
+     */
+    private function seccion(Collection $resultados): array
+    {
+        $sedes = $resultados->pluck('postulante.inscripcion.sede')->filter()->unique('id_sed');
+
+        return [
+            'resultados' => $resultados->values(),
             'modalidades' => $resultados->pluck('postulante.inscripcion.modalidad.nombre_mod')
                 ->filter()
                 ->unique()
                 ->sort(SORT_NATURAL | SORT_FLAG_CASE)
                 ->implode(' / '),
             'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
-            'secciones' => $esGeneral
-                ? $this->seccionesPorCarrera($resultados)
-                : collect([[
-                    'resultados' => $resultados,
-                    'modalidades' => $resultados->pluck('postulante.inscripcion.modalidad.nombre_mod')
-                        ->filter()
-                        ->unique()
-                        ->sort(SORT_NATURAL | SORT_FLAG_CASE)
-                        ->implode(' / '),
-                    'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
-                ]]),
         ];
     }
 
@@ -124,27 +177,14 @@ class PadronResultadosPdf
     {
         return $resultados
             ->groupBy('postulante.inscripcion.id_car')
-            ->map(function (Collection $resultados): array {
-                $ordenados = $resultados
-                    ->sortBy(fn (Resultado $resultado) => sprintf(
-                        '%010d-%010d-%010d',
-                        $resultado->orden_carrera_res ?? PHP_INT_MAX,
-                        $resultado->orden_general_res ?? PHP_INT_MAX,
-                        $resultado->id_res,
-                    ))
-                    ->values();
-                $sedes = $ordenados->pluck('postulante.inscripcion.sede')->filter()->unique('id_sed');
-
-                return [
-                    'resultados' => $ordenados,
-                    'modalidades' => $ordenados->pluck('postulante.inscripcion.modalidad.nombre_mod')
-                        ->filter()
-                        ->unique()
-                        ->sort(SORT_NATURAL | SORT_FLAG_CASE)
-                        ->implode(' / '),
-                    'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
-                ];
-            })
+            ->map(fn (Collection $delaCarrera): array => $this->seccion(
+                $delaCarrera->sortBy(fn (Resultado $resultado): string => sprintf(
+                    '%010d-%010d-%010d',
+                    $resultado->orden_carrera_res ?? PHP_INT_MAX,
+                    $resultado->orden_general_res ?? PHP_INT_MAX,
+                    $resultado->id_res,
+                )),
+            ))
             ->sortBy(fn (array $seccion) => $seccion['resultados']->first()->postulante->inscripcion->carrera->nombre_car, SORT_NATURAL | SORT_FLAG_CASE)
             ->values();
     }

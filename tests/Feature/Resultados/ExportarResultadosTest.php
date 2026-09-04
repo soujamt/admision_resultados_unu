@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\GrupoModalidad;
+use App\Enums\OrdenPadronResultados;
 use App\Models\Carrera;
 use App\Models\Examen;
 use App\Models\Modalidad;
@@ -43,6 +44,8 @@ function jornadaParaExportar(): array
 
     $examen = Examen::factory()->create([
         'id_pro' => $proceso->id_pro,
+        /* Fijo, porque el nombre entra en el archivo que se descarga. */
+        'nombre_exa' => 'Examen general',
         'puntaje_error_exa' => 0,
         'puntaje_blanco_exa' => 0,
         'puntaje_minimo_exa' => 50,
@@ -92,6 +95,60 @@ it('el listado general separa las carreras y conserva los NSP en su carrera', fu
         ->and($documento->getDomPDF()->getCanvas()->get_page_count())->toBe(2)
         ->and($datos['esPorCarrera'])->toBeFalse()
         ->and($datos['tituloListado'])->toBe('Por carrera profesional');
+});
+
+it('publica un solo listado alfabético con todas las carreras', function () {
+    $escenario = jornadaParaExportar();
+
+    $datos = app(PadronResultadosPdf::class)->datos(
+        $escenario['examen'],
+        orden: OrdenPadronResultados::Alfabetico,
+    );
+    $nombres = $datos['resultados']->pluck('postulante.nombre_exp');
+
+    expect($datos['tituloListado'])->toBe('Por orden alfabético')
+        /* Una sola sección: no se corta por carrera. */
+        ->and($datos['secciones'])->toHaveCount(1)
+        ->and($datos['secciones'][0]['resultados'])->toHaveCount(5)
+        /* Alfabético de verdad, con las tildes en su sitio. */
+        ->and($nombres->all())->toBe($nombres->sort(SORT_NATURAL | SORT_FLAG_CASE)->values()->all())
+        /* Los NSP también figuran, con su puntaje vacío. */
+        ->and($datos['resultados']->whereNull('puntaje_res'))->toHaveCount(1);
+});
+
+it('publica un solo listado por orden de mérito de todas las carreras', function () {
+    $escenario = jornadaParaExportar();
+
+    $datos = app(PadronResultadosPdf::class)->datos(
+        $escenario['examen'],
+        orden: OrdenPadronResultados::Merito,
+    );
+    $ordenes = $datos['secciones'][0]['resultados']
+        ->pluck('orden_general_res')
+        ->filter()
+        ->values();
+
+    expect($datos['tituloListado'])->toBe('Por orden de mérito')
+        ->and($datos['secciones'])->toHaveCount(1)
+        ->and($datos['secciones'][0]['resultados'])->toHaveCount(5)
+        /* De mejor a peor, y el NSP sin orden queda al final. */
+        ->and($ordenes->all())->toBe($ordenes->sort()->values()->all())
+        ->and($datos['secciones'][0]['resultados']->last()->orden_general_res)->toBeNull();
+});
+
+it('exporta cada orden con su propio nombre de archivo', function () {
+    $escenario = jornadaParaExportar();
+    $usuario = Usuario::factory()->administrador()->create();
+
+    $this->actingAs($usuario)
+        ->get(route('resultados.pdf', ['examen' => $escenario['examen'], 'orden' => 'alfabetico']))
+        ->assertOk()
+        ->assertDownload('resultados-2027-iii-examen-general-orden-alfabetico.pdf');
+
+    $this->actingAs($usuario)
+        ->get(route('resultados.pdf', ['examen' => $escenario['examen'], 'orden' => 'merito']))
+        ->assertOk()
+        ->assertDownload('resultados-2027-iii-examen-general-orden-merito.pdf');
 });
 
 it('exporta el pdf de una sola carrera', function () {

@@ -3,7 +3,10 @@
     <head>
         <meta charset="utf-8">
         <style>
-            @page { margin: 8mm 10mm 10mm; }
+            /* El margen inferior es el que reserva el sitio del pie: al ir en
+               position:fixed no ocupa lugar en el flujo, y con un margen corto
+               las ultimas filas del listado le quedaban encima. */
+            @page { margin: 8mm 10mm 24mm; }
             * { box-sizing: border-box; }
             body { color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 7px; margin: 0; }
             .cabecera { min-height: 29mm; position: relative; text-align: center; }
@@ -23,7 +26,7 @@
             .carrera { width: 29%; }
             .puntaje { text-align: right; width: 9%; }
             .estado { text-align: center; width: 9%; }
-            .pie { border-top: 1px solid #555; bottom: -5mm; color: #555; font-size: 7px; height: 8mm; left: 0; padding-top: 1mm; position: fixed; right: 0; }
+            .pie { border-top: 1px solid #555; bottom: -20mm; color: #555; font-size: 7px; height: 16mm; left: 0; padding-top: 1.5mm; position: fixed; right: 0; }
             .leyenda { line-height: 1.25; }
             .paginacion { left: 0; position: absolute; right: 0; text-align: center; top: 1mm; }
             .pagina::after { content: counter(page); }

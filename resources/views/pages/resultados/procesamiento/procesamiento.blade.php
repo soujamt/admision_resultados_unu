@@ -9,9 +9,22 @@
                     <flux:button :href="route('resultados.pdf.juego', $examen)" icon="archive-box-arrow-down" variant="filled">
                         Juego por carrera (Art. 84)
                     </flux:button>
-                    <flux:button :href="route('resultados.pdf', $examen)" icon="document-arrow-down" variant="primary">
-                        Exportar PDF general
-                    </flux:button>
+
+                    <flux:dropdown position="bottom" align="end">
+                        <flux:button icon="document-arrow-down" icon:trailing="chevron-down" variant="primary">
+                            Exportar padrón
+                        </flux:button>
+
+                        <flux:menu>
+                            @foreach (App\Enums\OrdenPadronResultados::cases() as $orden)
+                                <flux:menu.item
+                                    :href="route('resultados.pdf', ['examen' => $examen, 'orden' => $orden->value])"
+                                >
+                                    {{ $orden->titulo() }}
+                                </flux:menu.item>
+                            @endforeach
+                        </flux:menu>
+                    </flux:dropdown>
                 @endcan
             @endif
         </x-slot:acciones>

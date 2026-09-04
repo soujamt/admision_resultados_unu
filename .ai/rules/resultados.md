@@ -1,6 +1,6 @@
 ---
 paths:
-  - '{app/Services/Admision/ResolverResultadosService.php,app/Services/Admision/ExamenService.php,app/Services/Admision/PadronResultadosPdf.php,app/Http/Controllers/Resultados/**,app/Models/Resultado.php,app/Models/ExamenPostulante.php,app/Enums/EstadoResultado.php,resources/views/pages/resultados/procesamiento/**,resources/views/pdf/resultados/**}'
+  - '{app/Services/Admision/ResolverResultadosService.php,app/Services/Admision/ExamenService.php,app/Services/Admision/PadronResultadosPdf.php,app/Http/Controllers/Resultados/**,app/Models/Resultado.php,app/Models/ExamenPostulante.php,app/Enums/EstadoResultado.php,app/Enums/OrdenPadronResultados.php,resources/views/pages/resultados/procesamiento/**,resources/views/pdf/resultados/**}'
 ---
 
 # Resultados
@@ -21,9 +21,16 @@ La adjudicacion resuelve primero las vacantes que no son de grupo Ordinario. Rec
 Toda lectura del cuadro de vacantes para resolver o para medir desiertas usa el scope `habilitada()`. Una vacante deshabilitada no ofrece cupos ni engorda el denominador del porcentaje de desiertas ni el del examen complementario de la Disposicion Complementaria Decima Segunda (>20% en tercera convocatoria). Las plazas que se reparten son `Vacante::plazas()`, no `cantidad_vac`: incluyen el arrastre de los Arts. 17, 18 y 19 descrito en [ingresantes](ingresantes.md).
 
 ## El PDF del Art. 84 lo arma un servicio, no el controlador
-`PadronResultadosPdf` construye los datos del padron y los dos controladores lo usan: uno entrega un PDF suelto y otro el juego completo en ZIP, con el general y uno por carrera. Ademas del listado imprime lo que sustenta las notas: el factor del Art. 80 y el puntaje con que cerro cada vacante.
+`PadronResultadosPdf` construye los datos del padron y los dos controladores lo usan: uno entrega un PDF suelto y otro el juego completo en ZIP, con el general y uno por carrera.
 
-La linea de corte solo se dibuja cuando el listado tiene una sola vacante en juego (`filaCorte`). Un listado por carrera que mezcla modalidades cierra en un puntaje distinto por cada una y sus ingresantes quedan intercalados, asi que ahi los cortes van en la cabecera, uno por modalidad, y no se dibuja linea. Por lo mismo el factor se imprime como numero solo si el listado comparte uno; el general anuncia que es variable por carrera.
+El formato es el que ya publica la Direccion de Admision: cabecera, listado y nada mas. La carrera va en su columna de cada fila, no en el titulo, y el estado cierra la linea. **No se imprime resumen, ni factor de dificultad, ni linea de corte** entre la cabecera y los resultados; eso se saco a pedido de la Direccion y no debe volver.
+
+## Los tres ordenes del padron de resultados
+`OrdenPadronResultados` decide como sale el listado sin filtrar: `PorCarrera` reparte una seccion por carrera con salto de pagina, `Alfabetico` publica todo de corrido por apellidos y `Merito` todo de corrido por `orden_general_res`. El titulo del documento sale del propio enum, y el orden viaja por la query (`?orden=`).
+
+Filtrar por carrera o vacante manda sobre el enum: ahi siempre es una sola seccion en su orden de merito interno, porque es el PDF que se publica por carrera.
+
+El alfabetico normaliza con `Str::ascii`, como todo listado de apellidos del proyecto: comparado byte a byte la «A» con tilde cae despues de la «B». En cualquiera de los tres, el NSP y el anulado figuran con el puntaje vacio y quedan al final del orden de merito, que es lo que pide el Art. 76.
 
 ## Puntajes y empates
 Los valores del Art. 77 (+1 acierto, -0,01 error, +0,1 blanco) son configurables por jornada. El empate en el ultimo puesto admite a todos los empatados por el Art. 85. El NSP del Art. 76 alcanza tanto al que figura en el padron sin lectura optica como al inscrito que no aparece en el padron del escaner; ver [models-services-admision](models-services-admision.md) para como entra ese segundo caso.
