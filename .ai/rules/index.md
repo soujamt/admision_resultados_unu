@@ -20,3 +20,4 @@ Before planning or editing, find the row whose globs match the file's path and r
 | {app/Models/**,database/migrations/**,database/factories/**,database/seeders/**} | .ai/rules/seeders.md |
 | app/Services/Admision/ResolverResultadosService.php | .ai/rules/services-admision.md |
 | {app/Services/Excel/**,tests/Support/**} | .ai/rules/support.md |
+| {app/Models/Aula.php,resources/views/pdf/padron-postulantes.blade.php,resources/views/pdf/lista-asistencia.blade.php} | .ai/rules/views-pdf.md |

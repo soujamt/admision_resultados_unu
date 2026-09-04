@@ -69,6 +69,8 @@ class PadronPostulantesPdf
                 'aulaExamen.aula.sede',
                 'inscripcion.postulante',
                 'inscripcion.modalidad',
+                'inscripcion.carrera',
+                'inscripcion.sede',
             ])
             ->get()
             ->sortBy(

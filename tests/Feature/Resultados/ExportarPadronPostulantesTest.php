@@ -31,7 +31,7 @@ function jornadaConSorteo(array $postulantes): array
     ]);
     $area = Area::factory()->create(['numero_are' => 2, 'nombre_are' => 'Ciencias de la Salud']);
     $modalidad = Modalidad::factory()->create(['nombre_mod' => 'Exoneración - CEPREUNU']);
-    $carrera = Carrera::factory()->create(['id_are' => $area->id_are]);
+    $carrera = Carrera::factory()->llamada('Ingeniería de Sistemas')->create(['id_are' => $area->id_are]);
     $sede = Sede::factory()->create([
         'codigo_sed' => 'CORONEL_PORTILLO',
         'nombre_sed' => 'Sede Coronel Portillo - Callería',
@@ -39,7 +39,8 @@ function jornadaConSorteo(array $postulantes): array
 
     $aulas = [];
 
-    foreach ([1 => 'PAB I', 2 => 'PAB II'] as $numero => $pabellon) {
+    /* Los pabellones llegan con prefijo y piso, como en el maestro real. */
+    foreach ([1 => 'PAB I - Piso 2', 2 => 'PAB II - Piso 1'] as $numero => $pabellon) {
         $aulas[$numero] = ExamenAula::factory()->create([
             'id_exa' => $examen->id_exa,
             'id_aul' => Aula::factory()->create([
@@ -118,14 +119,29 @@ it('arma la cabecera y las columnas del formato oficial', function () {
     );
 
     /* Las cinco columnas del formato, en orden y sin la de documento. */
-    expect($html)->toMatch('/N°<\/th>\s*<th class="col-postulante">Apellidos y nombres<\/th>\s*<th class="col-pabellon">Pabellón<\/th>\s*<th class="col-aula">Aula<\/th>\s*<th class="col-carpeta">Carpeta<\/th>/');
-    expect($html)->not->toContain('col-documento');
+    expect($html)->toMatch('/N°<\/th>\s*<th class="col-codigo">Código<\/th>\s*<th class="col-postulante">Apellidos y nombres<\/th>\s*<th class="col-carrera">Carrera profesional<\/th>\s*<th class="col-pabellon">Pabellón<\/th>\s*<th class="col-aula">Aula<\/th>\s*<th class="col-carpeta">Carpeta<\/th>/');
+
+    /* El código es el documento y la carrera va con la sede y el nombre corto. */
+    expect($html)->toContain('87654320', 'SCP-C -', 'INGENIERÍA DE SISTEMAS')
+        ->and($html)->toContain('Arial, Helvetica, sans-serif');
+
+    /* Fecha de la jornada, con la línea colgando de ella. En el HTML el
+       Blade la parte en dos líneas; el PDF la junta al maquetar. */
+    expect($html)->toMatch('/class="fecha">\s*Pucallpa,\s*21 de marzo de 2027\s*<\/div>/')
+        ->and($html)->toMatch('/\.fecha \{[^}]*border-bottom:[^}]*\}/');
+
+    /* Sombreado de la cabecera y de la columna del correlativo. No se fija el
+       tono: lo que importa es que ambas sigan sombreadas. */
+    expect($html)->toMatch('/\.listado th \{[^}]*background: #[0-9A-Fa-f]{3,6}/')
+        ->and($html)->toMatch('/\.col-numero \{[^}]*background: #[0-9A-Fa-f]{3,6}/');
 
     /* Alfabético entre aulas: Álvarez (Aula 2) va antes que Benites (Aula 1). */
     expect(mb_strpos($html, 'ÁLVAREZ'))->toBeLessThan(mb_strpos($html, 'BENITES'))
         ->and(mb_strpos($html, 'BENITES'))->toBeLessThan(mb_strpos($html, 'ZÚÑIGA'));
 
-    expect($html)->toContain('PAB I', 'PAB II', 'Aula 1', 'Aula 2');
+    /* El pabellón se reduce al numeral y el aula pierde la palabra «Aula». */
+    expect($html)->toContain('>I<', '>II<', '>1<', '>2<')
+        ->and($html)->not->toContain('PAB I - Piso 2', 'Aula 1');
 });
 
 it('avisa cuando la jornada todavía no tiene sorteo', function () {

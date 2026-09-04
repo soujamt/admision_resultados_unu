@@ -75,8 +75,8 @@
                         <th>N° Postulantes</th>
                     </tr>
                     <tr>
-                        <td>{{ $aulaExamen->aula->pabellon_aul ?? '—' }}</td>
-                        <td>{{ $aulaExamen->aula->nombre_aul }}</td>
+                        <td>{{ $aulaExamen->aula->numeroDePabellon() ?? '—' }}</td>
+                        <td>{{ $aulaExamen->aula->numeroDeAula() }}</td>
                         <td>{{ $total }}</td>
                     </tr>
                 </table>
