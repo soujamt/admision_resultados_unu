@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\SalirController;
 use App\Http\Controllers\Inscripciones\MostrarFotoController;
 use App\Http\Controllers\Resultados\ExportarJuegoResultadosController;
 use App\Http\Controllers\Resultados\ExportarListaAsistenciaController;
+use App\Http\Controllers\Resultados\ExportarPadronAulaController;
 use App\Http\Controllers\Resultados\ExportarPadronPostulantesController;
 use App\Http\Controllers\Resultados\ExportarResultadosController;
 use App\Http\Controllers\Resultados\ExportarResultadosExcelController;
@@ -40,6 +41,7 @@ Route::middleware('auth')->group(function () {
 
     Route::livewire('/resultados/aulas', 'pages::resultados.aulas')->name('resultados.aulas');
     Route::get('/resultados/{examen}/padron', ExportarPadronPostulantesController::class)->name('resultados.padron');
+    Route::get('/resultados/aulas/{aulaExamen}/padron', ExportarPadronAulaController::class)->name('resultados.aulas.padron');
     Route::get('/resultados/aulas/{aulaExamen}/asistencia', ExportarListaAsistenciaController::class)->name('resultados.aulas.asistencia');
     Route::livewire('/resultados/procesamiento', 'pages::resultados.procesamiento')->name('resultados.procesamiento');
     Route::livewire('/resultados/ingresantes', 'pages::resultados.ingresantes')->name('resultados.ingresantes');

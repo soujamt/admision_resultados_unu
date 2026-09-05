@@ -4,6 +4,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| {app/Services/Admision/PadronAulaPdf.php,app/Services/Admision/PadronPostulantesPdf.php,app/Services/Admision/ListaAsistenciaPdf.php} | .ai/rules/admision-services-admision.md |
 | {app/Models/Vacante.php,app/Models/ProcesoModalidad.php,app/Services/Admision/**}, resources/views/pages/configuracion/vacantes/** | .ai/rules/admision.md |
 | {app/**,tests/**} | .ai/rules/app.md |
 | resources/views/pages/resultados/aulas/**, resources/views/pages/resultados/aulas/aulas.blade.php | .ai/rules/aulas.md |

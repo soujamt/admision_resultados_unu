@@ -6,6 +6,7 @@ use Database\Factories\AsignacionExamenFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class AsignacionExamen extends Model
 {
@@ -26,5 +27,21 @@ class AsignacionExamen extends Model
     public function aulaExamen(): BelongsTo
     {
         return $this->belongsTo(ExamenAula::class, 'id_eau', 'id_eau');
+    }
+
+    /**
+     * Clave con la que se ordenan los padrones de postulantes.
+     *
+     * `Str::ascii` es lo que hace real el orden alfabetico: comparado byte a
+     * byte «ALVAREZ» con tilde cae despues de «BENITES» y «ÑAHUI» despues de
+     * «ZUÑIGA», porque en UTF-8 las tildes y la eñe van por encima de la «Z».
+     * El documento solo desempata, para que dos homonimos salgan siempre en el
+     * mismo orden en un padron que se publica.
+     */
+    public function claveAlfabetica(): string
+    {
+        $postulante = $this->inscripcion->postulante;
+
+        return Str::ascii(mb_strtoupper($postulante->nombreCompleto())).'|'.$postulante->numero_documento_pos;
     }
 }

@@ -15,6 +15,9 @@
             .institucion { font-size: 14px; font-weight: bold; line-height: 1.15; margin-bottom: 2px; }
             .linea-cabecera { font-size: 9.5px; font-weight: bold; line-height: 1.25; }
             .titulo { font-size: 11px; font-weight: bold; margin: 9px 0 4px; text-align: center; text-transform: uppercase; }
+            /* Solo la lleva el padrón por aula: identifica el juego de hojas,
+               que una vez impreso es indistinguible del de otra aula. */
+            .aula-cabecera { font-size: 9px; font-weight: bold; margin-bottom: 2px; text-align: left; }
             /* La linea cuelga de la fecha: un div vacio con solo borde superior
                DomPDF lo colapsa, y este elemento si tiene caja propia. */
             .fecha { border-bottom: 0.8px solid #222; font-size: 8.5px; margin-bottom: 10px; padding-bottom: 3px; text-align: right; }
@@ -42,7 +45,11 @@
                 'codigoProceso' => $examen->proceso->codigo_pro,
             ])
 
-            <div class="titulo">Padrón general de postulantes</div>
+            <div class="titulo">{{ $titulo }}</div>
+
+            @isset($aulaCabecera)
+                <div class="aula-cabecera">{{ $aulaCabecera }}</div>
+            @endisset
 
             <div class="fecha">
                 {{ mb_convert_case($ubicacion, MB_CASE_TITLE, 'UTF-8') }},

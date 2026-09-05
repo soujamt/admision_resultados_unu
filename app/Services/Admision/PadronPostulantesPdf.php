@@ -48,17 +48,14 @@ class PadronPostulantesPdf
         return [
             'examen' => $examen,
             'asignaciones' => $asignaciones,
+            'titulo' => 'Padrón general de postulantes',
+            'aulaCabecera' => null,
             'modalidadCabecera' => filled($modalidades) ? $modalidades : $examen->nombre_exa,
             'ubicacion' => $sedes->count() === 1 ? $sedes->first()->ubicacionCabecera() : 'UCAYALI',
         ];
     }
 
     /**
-     * Orden alfabetico real: `Str::ascii` es lo que evita que un apellido con
-     * tilde caiga al final, porque comparado byte a byte la «Á» va despues de
-     * la «B». El documento solo desempata, para que dos homonimos salgan
-     * siempre en el mismo orden en un padron que se publica.
-     *
      * @return Collection<int, AsignacionExamen>
      */
     private function asignaciones(Examen $examen): Collection
@@ -73,12 +70,7 @@ class PadronPostulantesPdf
                 'inscripcion.sede',
             ])
             ->get()
-            ->sortBy(
-                fn (AsignacionExamen $asignacion): string => Str::ascii(
-                    mb_strtoupper($asignacion->inscripcion->postulante->nombreCompleto()),
-                ).'|'.$asignacion->inscripcion->postulante->numero_documento_pos,
-                SORT_NATURAL,
-            )
+            ->sortBy(fn (AsignacionExamen $asignacion): string => $asignacion->claveAlfabetica(), SORT_NATURAL)
             ->values();
     }
 }

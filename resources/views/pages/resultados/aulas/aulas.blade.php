@@ -176,6 +176,16 @@
                         <flux:table.cell align="end">
                             <div class="flex justify-end gap-1">
                                 <flux:button
+                                    :href="route('resultados.aulas.padron', $fila)"
+                                    size="sm"
+                                    variant="subtle"
+                                    icon="document-arrow-down"
+                                    tooltip="Padrón del aula, en orden alfabético"
+                                >
+                                    Padrón
+                                </flux:button>
+
+                                <flux:button
                                     :href="route('resultados.aulas.asistencia', $fila)"
                                     size="sm"
                                     variant="subtle"

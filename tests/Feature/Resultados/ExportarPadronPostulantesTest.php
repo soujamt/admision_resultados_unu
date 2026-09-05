@@ -162,12 +162,10 @@ it('escribe «setiembre» a la peruana en la fecha de la cabecera', function () 
 it('avisa cuando la jornada todavía no tiene sorteo', function () {
     $escenario = jornadaConSorteo([]);
 
-    $html = view('pdf.padron-postulantes', [
-        'examen' => $escenario['examen']->load('proceso'),
-        'asignaciones' => collect(),
-        'modalidadCabecera' => $escenario['examen']->nombre_exa,
-        'ubicacion' => 'PUCALLPA',
-    ])->render();
+    /* Por el servicio y no con un arreglo a mano: la vista la comparten el
+       padrón general y el del aula, así que armar sus datos aparte es quedarse
+       atrás la próxima vez que cambie lo que espera. */
+    $html = view('pdf.padron-postulantes', app(PadronPostulantesPdf::class)->datos($escenario['examen']))->render();
 
     expect($html)->toContain('Todavía no se ha ejecutado el sorteo de aulas para esta jornada.');
 });
